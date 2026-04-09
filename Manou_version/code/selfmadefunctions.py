@@ -7,6 +7,8 @@ import math as math
 from scipy.ndimage import gaussian_filter1d
 from pathlib import Path
 
+# Author: Manou Liesker. Student number: 15250946
+
 # The camera from the measurements of Maria and Manou was turned 90 degrees, 
 # Making positive movement in X equal negative vertical movement. 
 # This function creates a new csv file that's easier to work with. 

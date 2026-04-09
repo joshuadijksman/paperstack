@@ -10,6 +10,8 @@ import selfmadefunctions
 import importlib
 importlib.reload(selfmadefunctions)
 
+# Author: Manou Liesker, Student number: 15250946
+
 NETWORK_FOLDER = Path(rf"Z:\Clean_Data\Data_Manou_Maria_Clean")
 T3_Thicknesses = [0, 20, 40, 60, 80, 100, 140, 180, 200, 250, 300, 350, 400, 500]
 V_Thicknesses = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40]
