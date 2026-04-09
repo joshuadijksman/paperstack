@@ -62,15 +62,13 @@ def databewerken(networkfolder, filename, thickness, Plot):
     # ervoor zorgen dat eerste rechte data wordt afgeknipt
     for i in range(N_points):           # gemiddelde nemen van eerste N punten
         Total_first_N_points += y_points[i]
-    average_first_N_points = Total_first_N_points / N_points
-
-
+    average_first_N_points = Total_first_N_points / N_points # wordt genomen als "drop height"
+    
     while abs(y_points[delete_first_elements] - average_first_N_points) < leniency:        # wachten tot een punt te ver van het gemiddelde van de eerste N af zit. AKA wanneer valt het?
         delete_first_elements += 1
 
     afgeknipt_y = y_points[delete_first_elements:]     # Deze punten afknippen
     afgeknipt_frame = frames[delete_first_elements:]   # Deze punten afknippen
-
     smoothed = gaussian_filter1d(afgeknipt_y, sigma = sigma)     # hier een gaussisch filter overheen halen, zodat alle punten mooi zijn
 
     for i in range(len(smoothed) - 1):
