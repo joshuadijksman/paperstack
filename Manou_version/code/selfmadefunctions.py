@@ -36,7 +36,7 @@ def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0
 
     cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
 
-def databewerken(networkfolder, filename, thickness):
+def databewerken(networkfolder, filename, thickness, Plot):
   
     # tweak these
     N_points = 60
@@ -75,7 +75,6 @@ def databewerken(networkfolder, filename, thickness):
 
     for i in range(len(smoothed) - 1):
         if smoothed[i] < smoothed[i + 1] and smoothed[i] < smoothed[i-1]:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
-            print(f"Minimum at {i} frames.")
             if laagtepunt_1 == 0:
                 laagtepunt_1 = i + 2
             else:
@@ -89,50 +88,99 @@ def databewerken(networkfolder, filename, thickness):
     frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
     y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
 
-    fig, ax = plt.subplots(1, 3, figsize=(18, 5))
-    print(f'Thickness = {thickness}')
-    print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
-    print(f'The ball is released at y = {average_first_N_points} pixels.')
+    if Plot:
+        fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+        
+        print(f'Thickness = {thickness}')
+        print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
+        print(f'The ball is released at y = {average_first_N_points} pixels.')
+        print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
 
-    # Grafiek 1
-    ax[0].errorbar(frames, y_points, yerr=y_err)
-    ax[0].plot(
-        [delete_first_elements - 200, delete_first_elements + 200],
-        [average_first_N_points, average_first_N_points],
-        'b--'
-    )
-    ax[0].plot(
-        [delete_first_elements, delete_first_elements],
-        [average_first_N_points + 100, 0],
-        'r--'
-    )
-    ax[0].set_xlabel('Time [frames]')
-    ax[0].set_ylabel('Height [pixels]')
-    ax[0].set_title('Beginning Data')
+        # Grafiek 1
+        ax[0].errorbar(frames, y_points, yerr=y_err)
+        ax[0].plot(
+            [delete_first_elements - 200, delete_first_elements + 200],
+            [average_first_N_points, average_first_N_points],
+            'b--'
+        )
+        ax[0].plot(
+            [delete_first_elements, delete_first_elements],
+            [average_first_N_points + 100, 0],
+            'r--'
+        )
+        ax[0].set_xlabel('Time [frames]')
+        ax[0].set_ylabel('Height [pixels]')
+        ax[0].set_title('Beginning Data')
 
-    # Grafiek 2
-    ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
-    ax[1].plot(x1, y, 'r--')
-    ax[1].plot(x2, y, 'r--')
-    ax[1].set_xlabel('Time [frames]')
-    ax[1].set_ylabel('Height [pixels]')
-    ax[1].set_title('Data from moment of release')
+        # Grafiek 2
+        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
+        ax[1].plot(x1, y, 'r--')
+        ax[1].plot(x2, y, 'r--')
+        ax[1].set_xlabel('Time [frames]')
+        ax[1].set_ylabel('Height [pixels]')
+        ax[1].set_title('Data from moment of release')
 
-    # Grafiek 3
-    ax[2].errorbar(
-        frame_bounce,
-        y_bounce,
-        yerr=y_err,
-        markersize=2,
-        fmt='o'
-    )
-    ax[2].set_xlabel('Time [frames]')
-    ax[2].set_ylabel('Height [pixels]')
-    ax[2].set_title('Isolated first Bounce')
+        # Grafiek 3
+        ax[2].errorbar(
+            frame_bounce,
+            y_bounce,
+            yerr=y_err,
+            markersize=2,
+            fmt='o'
+        )
+        ax[2].set_xlabel('Time [frames]')
+        ax[2].set_ylabel('Height [pixels]')
+        ax[2].set_title('Isolated first Bounce')
 
-    fig.suptitle(f'Measurement on thickness {thickness}, filename = {filename}')
-    plt.tight_layout()
-    plt.show()
+        fig.suptitle(f'Measurement on thickness {thickness}, filename = {filename}')
+        plt.tight_layout()
+        plt.show()
 
     return average_first_N_points, frame_bounce, y_bounce  #Returns the drop height en the trajectory of the relevant bounce.
 
+def parabola_fit(frames, y_points, Plot, fit_report):
+
+    def fit_function(t, a, t_0, b):
+        return a * (t - t_0)**2 + b
+
+    calibration_model = Model(fit_function)
+    fit_result = calibration_model.fit(y_points, t=frames, a=20, t_0=70, b=200, weights=1)
+    bounce_height = fit_result.params['b'].value
+
+    if fit_report:
+        print(fit_result.fit_report())
+
+    if Plot:
+        fit_y = fit_result.best_fit
+        residuals = y_points - fit_y
+        rmse = np.sqrt(np.mean(residuals**2))
+
+        fig, (ax_res, ax_main) = plt.subplots(
+            2, 1, figsize=(5, 4), sharex=True,
+            gridspec_kw={'height_ratios': [1, 3]}
+        )
+
+        print(f'bounce height = {bounce_height} pixels')
+        print(f'RMSE = {rmse:.2f} pixels')
+
+        # residual plot
+        ax_res.axhline(0, linestyle='--')
+        ax_res.errorbar(frames, residuals, yerr = 1, fmt = 'o', markersize=3)
+        ax_res.set_ylabel('Residual')
+        ax_res.set_title(f'Fit quality (RMSE = {rmse:.2f} px)')
+
+        # main plot
+        ax_main.errorbar(frames, y_points, label='Data', yerr=1, fmt='None', markersize=1, zorder=2)
+        ax_main.plot(frames, fit_y, label='Fit', zorder=1)
+        ax_main.plot([min(frames), max(frames)], [bounce_height, bounce_height],
+                     label='Bounce height', linestyle='--')
+
+        ax_main.set_xlabel('Frames (t)')
+        ax_main.set_ylabel('y')
+        ax_main.set_title('Data and fit')
+        ax_main.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    return bounce_height
