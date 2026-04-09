@@ -106,7 +106,7 @@ def databewerken(networkfolder, filename, thickness, Plot):
             [average_first_N_points + 100, 0],
             'r--'
         )
-        ax[0].set_xlabel('Time [frames]')
+        ax[0].set_xlabel('Time (frames)')
         ax[0].set_ylabel('Height [pixels]')
         ax[0].set_title('Beginning Data')
 
@@ -114,8 +114,8 @@ def databewerken(networkfolder, filename, thickness, Plot):
         ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
         ax[1].plot(x1, y, 'r--')
         ax[1].plot(x2, y, 'r--')
-        ax[1].set_xlabel('Time [frames]')
-        ax[1].set_ylabel('Height [pixels]')
+        ax[1].set_xlabel('Time (frames)')
+        ax[1].set_ylabel('Height (pixels)')
         ax[1].set_title('Data from moment of release')
 
         # Grafiek 3
@@ -126,8 +126,8 @@ def databewerken(networkfolder, filename, thickness, Plot):
             markersize=2,
             fmt='o'
         )
-        ax[2].set_xlabel('Time [frames]')
-        ax[2].set_ylabel('Height [pixels]')
+        ax[2].set_xlabel('Time (frames)')
+        ax[2].set_ylabel('Height (pixels)')
         ax[2].set_title('Isolated first Bounce')
 
         fig.suptitle(f'Measurement on thickness {thickness}, filename = {filename}')
@@ -173,8 +173,8 @@ def parabola_fit(frames, y_points, Plot, fit_report):
         ax_main.plot([min(frames), max(frames)], [bounce_height, bounce_height],
                      label='Bounce height', linestyle='--')
 
-        ax_main.set_xlabel('Frames (t)')
-        ax_main.set_ylabel('y')
+        ax_main.set_xlabel('Time (frames)')
+        ax_main.set_ylabel('Height (pixels)')
         ax_main.set_title('Data and fit')
         ax_main.legend()
 
@@ -201,7 +201,7 @@ def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
     if Plot:
         plt.errorbar(thicknesslist, COR, yerr= COR_err, fmt = 'o')
         plt.title('The COR as a function of substrate thickness')
-        plt.xlabel('Thickness [paper layers]')
+        plt.xlabel('Thickness (paper layers)')
         plt.ylabel('Coefficient of restitution')
         plt.show()
     return COR, COR_err
