@@ -8,11 +8,10 @@ from scipy.ndimage import gaussian_filter1d
 from pathlib import Path
 
 # The camera from the measurements of Maria and Manou was turned 90 degrees, 
-# making positive movement in X equal negative vertical movement. 
+# Making positive movement in X equal negative vertical movement. 
 # This function creates a new csv file that's easier to work with. 
-#(positive Y movement = positive vertical movement and y=0 is the point at wich the ball touches the floor.)
-#This also turns the data from mqa into a csv file, like the other ones.
-
+# (Positive Y movement = positive vertical movement and y=0 is the point at wich the ball touches the floor.)
+# This also turns the filetype from .mqa into a .csv file, like the other ones.
 def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0_500
  
     NETWORK_FOLDER = Path(rf"Z:\Data_Manou_Maria\{folder}")
@@ -20,13 +19,13 @@ def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0
     file_path = NETWORK_FOLDER / f"{filename}.mqa"
     data_current =  pd.read_csv(file_path, sep='\t')
 
-    omgedraaid_y_current = data_current.iloc[:, 2] #Camera hangt scheef, dus omdraaien en lezen van de x-coordinaten.
+    omgedraaid_y_current = data_current.iloc[:, 2] # Camera is 90 graden gedraaid. Dit zorgt ervoor dat x maximaal is wanneer de bal op het papier ligt.
     frame_current = data_current.iloc[:, 0]
-    laagste_y_current = max(omgedraaid_y_current)
+    laagste_y_current = max(omgedraaid_y_current) # op dit coordinaat ligt de bal op het papier
     
     y_current = []
     for oy in omgedraaid_y_current:
-        y = laagste_y_current - oy
+        y = laagste_y_current - oy 
         y_current.append(y)
 
     cleaned_file = pd.DataFrame(
@@ -36,6 +35,9 @@ def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0
 
     cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
 
+# Isolates the second bounce.
+# Input: Networkfolder adress, filename, thickness at measurement, Plot (True or False)
+# Output: The drop height and the frames/y-points of the isolated first bounce. If Plot = True, it shows the method it uses to find the first bounce.
 def databewerken(networkfolder, filename, thickness, Plot):
   
     # tweak these
@@ -136,6 +138,9 @@ def databewerken(networkfolder, filename, thickness, Plot):
 
     return average_first_N_points, frame_bounce, y_bounce  #Returns the drop height en the trajectory of the relevant bounce.
 
+# Fits a parabola to an isolated bounce
+# Input: Frames and y-points of an isolated bounce (So that you only have a parabola), Plot (True or False), fit_report (True or False)
+# Output: The top of the parabola (the bounce height). If Plot and fit_report are True, it plots the fit and prints the fit report 
 def parabola_fit(frames, y_points, Plot, fit_report):
 
     def fit_function(t, a, t_0, b):
@@ -183,6 +188,9 @@ def parabola_fit(frames, y_points, Plot, fit_report):
 
     return bounce_height
 
+# Calculates all the COR's of a given file and plots them
+# Input: Networkfolder adress, how the file begins (example: T3), list of thickness, the amount of repetitions at each thickness, Plot (True or False)
+# Output: List of COR and the calculated error on the COR (based on how far apart the 3 measurements are).
 def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
     COR = []
     COR_err = []
