@@ -182,3 +182,26 @@ def parabola_fit(frames, y_points, Plot, fit_report):
         plt.show()
 
     return bounce_height
+
+def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
+    COR = []
+    COR_err = []
+
+    for thickness in thicknesslist:
+        temp_COR = []
+
+        for i in range(repetitions):
+            filename = f"{filebegin}_d{thickness}_{i+1}_clean"
+            drop_height, frames, y_points = databewerken(networkfolder, filename, thickness, False)
+            bounce_height = parabola_fit(frames, y_points, False, False)
+            temp_COR.append(np.sqrt(bounce_height/drop_height))
+        COR.append(sum(temp_COR)/3) 
+        COR_err.append(np.std(temp_COR)/np.sqrt(3))
+
+    if Plot:
+        plt.errorbar(thicknesslist, COR, yerr= COR_err, fmt = 'o')
+        plt.title('The COR as a function of substrate thickness')
+        plt.xlabel('Thickness [paper layers]')
+        plt.ylabel('Coefficient of restitution')
+        plt.show()
+    return COR, COR_err
