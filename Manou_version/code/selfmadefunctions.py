@@ -259,9 +259,9 @@ def normalize_y(filename):
 
     old_y = pd.to_numeric(data_current.iloc[:, 2], errors='coerce')
     frames = pd.to_numeric(data_current.iloc[:, 0], errors='coerce')
-    lowest_y = float(max(old_y)) # op dit coordinaat ligt de bal op het papier
 
-    
+    lowest_y = old_y.max()
+
     y_points = []
     for y in old_y:
         new_y = lowest_y - y
@@ -273,4 +273,4 @@ def normalize_y(filename):
     })
 
     cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
-    print(filename)
+    print(f"Saved as {filename}_clean.csv")
