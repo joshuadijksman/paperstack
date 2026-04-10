@@ -216,6 +216,7 @@ def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
         plt.show()
     return COR, COR_err
 
+# Reads out saladins data and plots it if Plot = True.
 def read_saladin_data(filename, Plot):
 
     NETWORK_FOLDER = Path(rf"Z:\Rough_Data\Data_Saladin_Rough")
@@ -248,3 +249,28 @@ def read_saladin_data(filename, Plot):
         plt.show()
 
     return Thickness, COR, COR_err
+
+def normalize_y(filename):
+
+    NETWORK_FOLDER = Path(rf"Z:\Clean_Data\Data_Pressure_HalfClean")
+
+    file_path = NETWORK_FOLDER / f"{filename}.csv"
+    data_current =  pd.read_csv(file_path)
+
+    old_y = pd.to_numeric(data_current.iloc[:, 2], errors='coerce')
+    frames = pd.to_numeric(data_current.iloc[:, 0], errors='coerce')
+    lowest_y = float(max(old_y)) # op dit coordinaat ligt de bal op het papier
+
+    
+    y_points = []
+    for y in old_y:
+        new_y = lowest_y - y
+        y_points.append(new_y)
+
+    cleaned_file = pd.DataFrame(
+    {'Frame': frames,
+     'Y': y_points,
+    })
+
+    cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
+    print(filename)
