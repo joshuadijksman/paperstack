@@ -43,7 +43,7 @@ def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0
 def databewerken(networkfolder, filename, thickness, Plot):
   
     # tweak these
-    N_points = 60
+    N_points = 5
     leniency = 5
     y_err = 1
 
@@ -70,18 +70,30 @@ def databewerken(networkfolder, filename, thickness, Plot):
     
     while abs(y_points[delete_first_elements] - average_first_N_points) < leniency:        # wachten tot een punt te ver van het gemiddelde van de eerste N af zit. AKA wanneer valt het?
         delete_first_elements += 1
-
+    
     afgeknipt_y = y_points[delete_first_elements:]     # Deze punten afknippen
     afgeknipt_frame = frames[delete_first_elements:]   # Deze punten afknippen
     smoothed = gaussian_filter1d(afgeknipt_y, sigma = sigma)     # hier een gaussisch filter overheen halen, zodat alle punten mooi zijn
 
+    afgeknipt_y = y_points[delete_first_elements:].to_numpy(dtype=float)
+    afgeknipt_frame = frames[delete_first_elements:].to_numpy(dtype=float)
+
+    mask = ~np.isnan(afgeknipt_y)
+    afgeknipt_y = afgeknipt_y[mask]
+    afgeknipt_frame = afgeknipt_frame[mask]
+
+    smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
+
+
+
     for i in range(len(smoothed) - 1):
         if smoothed[i] < smoothed[i + 1] and smoothed[i] < smoothed[i-1]:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
             if laagtepunt_1 == 0:
-                laagtepunt_1 = i + 2
+                laagtepunt_1 = i + 1
             else:
                 laagtepunt_2 = i - 2
                 break
+        
     
     y = [0, average_first_N_points]
     x1 = [laagtepunt_1 + delete_first_elements, laagtepunt_1 + delete_first_elements]
@@ -274,3 +286,14 @@ def normalize_y(filename):
 
     cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
     print(f"Saved as {filename}_clean.csv")
+
+
+def calculate_COR_Vacuum(networkfolder, filename, value):
+    drop_height, frames, y_points = databewerken(networkfolder, filename, value, False)
+    bounce_height = parabola_fit(frames, y_points, False, False)
+    COR = np.sqrt(bounce_height/drop_height)
+    COR_err = 0.02
+    return COR, COR_err
+
+
+
