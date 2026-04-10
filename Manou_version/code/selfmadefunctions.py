@@ -41,7 +41,6 @@ def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0
 # Input: Networkfolder adress, filename, thickness at measurement, Plot (True or False)
 # Output: The drop height and the frames/y-points of the isolated first bounce. If Plot = True, it shows the method it uses to find the first bounce.
 def databewerken(networkfolder, filename, thickness, Plot):
-  
     # tweak these
     N_points = 5
     leniency = 5
@@ -55,7 +54,6 @@ def databewerken(networkfolder, filename, thickness, Plot):
     delete_first_elements = 0
     laagtepunt_1 = 0
     laagtepunt_2 = 0
-    
 
     file_path = networkfolder / f"{filename}.csv"
     data_current =  pd.read_csv(file_path)
@@ -287,12 +285,11 @@ def normalize_y(filename):
     cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
     print(f"Saved as {filename}_clean.csv")
 
-
 def calculate_COR_Vacuum(networkfolder, filename, value):
     drop_height, frames, y_points = databewerken(networkfolder, filename, value, False)
     bounce_height = parabola_fit(frames, y_points, False, False)
     COR = np.sqrt(bounce_height/drop_height)
-    COR_err = 0.02
+    COR_err = 0.02 # not actual error, but couldnt calculate one.
     return COR, COR_err
 
 
