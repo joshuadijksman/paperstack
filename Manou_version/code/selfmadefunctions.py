@@ -215,3 +215,36 @@ def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
         plt.ylabel('Coefficient of restitution')
         plt.show()
     return COR, COR_err
+
+def read_saladin_data(filename, Plot):
+
+    NETWORK_FOLDER = Path(rf"Z:\Rough_Data\Data_Saladin_Rough")
+    filepath = f"{NETWORK_FOLDER}\\{filename}"
+
+    data_current = pd.read_csv(filepath)
+    pulled_Thickness = data_current.iloc[:, 0] 
+    pulled_COR = data_current.iloc[:, 1]
+
+    COR = []
+    COR_err = []
+    Thickness = []
+
+    for a in range(int(len(pulled_COR)/3)):
+        temp_COR = []
+
+        for b in range(3):
+            temp_COR.append(pulled_COR[3*a+b])
+        COR.append(sum(temp_COR)/3)
+        COR_err.append(np.std(temp_COR)/np.sqrt(3))
+
+    for a in range(int(len(pulled_Thickness)/3)):
+        Thickness.append(pulled_Thickness[3*a])
+
+    if Plot:
+        plt.errorbar(Thickness, COR, yerr = COR_err, fmt = 'o')
+        plt.title(f"File: {filename}")
+        plt.xlabel("Thickness (paper sheets)")
+        plt.ylabel("Coefficient of restitution")
+        plt.show()
+
+    return Thickness, COR, COR_err
