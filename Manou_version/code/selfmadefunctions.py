@@ -216,7 +216,7 @@ def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
             bounce_height = parabola_fit(frames, y_points, False, False)
             temp_COR.append(np.sqrt(bounce_height/drop_height))
         COR.append(sum(temp_COR)/3) 
-        COR_err.append(np.std(temp_COR)/np.sqrt(3))
+        COR_err.append(np.std(temp_COR, ddof = 1)/np.sqrt(3))
 
     if Plot:
         plt.errorbar(thicknesslist, COR, yerr= COR_err, fmt = 'o')
@@ -226,7 +226,7 @@ def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
         plt.show()
     return COR, COR_err
 
-# Reads out saladins data and plots it if Plot = True.
+# Reads out saladins data and plots it if Plot == True.
 def read_saladin_data(filename, Plot):
 
     NETWORK_FOLDER = Path(rf"Z:\Rough_Data\Data_Saladin_Rough")
@@ -246,7 +246,7 @@ def read_saladin_data(filename, Plot):
         for b in range(3):
             temp_COR.append(pulled_COR[3*a+b])
         COR.append(sum(temp_COR)/3)
-        COR_err.append(np.std(temp_COR)/np.sqrt(3))
+        COR_err.append(np.std(temp_COR, ddof = 1)/np.sqrt(3))
 
     for a in range(int(len(pulled_Thickness)/3)):
         Thickness.append(pulled_Thickness[3*a])
@@ -260,8 +260,8 @@ def read_saladin_data(filename, Plot):
 
     return Thickness, COR, COR_err
 
+# Normalizes y-data from the pressure readings. Made specifically to handle the naming format used.
 def normalize_y(filename):
-
     NETWORK_FOLDER = Path(rf"Z:\Clean_Data\Data_Pressure_HalfClean")
 
     file_path = NETWORK_FOLDER / f"{filename}.csv"
@@ -285,11 +285,12 @@ def normalize_y(filename):
     cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
     print(f"Saved as {filename}_clean.csv")
 
+# Same thing: specific version for the pressure readings.
 def calculate_COR_Vacuum(networkfolder, filename, value):
     drop_height, frames, y_points = databewerken(networkfolder, filename, value, False)
     bounce_height = parabola_fit(frames, y_points, False, False)
     COR = np.sqrt(bounce_height/drop_height)
-    COR_err = 0.02 # not actual error, but couldnt calculate one.
+    COR_err = 0 # not actual error, but couldnt calculate one.
     return COR, COR_err
 
 
