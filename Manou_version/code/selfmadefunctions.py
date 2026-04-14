@@ -227,14 +227,14 @@ def calulate_COR(networkfolder, filebegin, thicknesslist, repetitions, Plot):
     return COR, COR_err
 
 # Reads out saladins data and plots it if Plot == True.
-def read_saladin_data(filename, Plot):
+def read_saladin_data(filename, Plot, datacolumn):
 
     NETWORK_FOLDER = Path(rf"Z:\Rough_Data\Data_Saladin_Rough")
     filepath = f"{NETWORK_FOLDER}\\{filename}"
 
     data_current = pd.read_csv(filepath)
     pulled_Thickness = data_current.iloc[:, 0] 
-    pulled_COR = data_current.iloc[:, 1]
+    pulled_COR = data_current.iloc[:, datacolumn]
 
     COR = []
     COR_err = []
