@@ -28,9 +28,9 @@ plt.legend()
 plt.show()
 
 
-A4_Thickness, A4_COR, A4_COR_err = selfmadefunctions.read_saladin_data("A4_sanitized_data.csv", True)
-A5B_Thickness, A5B_COR, A5B_COR_err = selfmadefunctions.read_saladin_data("A5_B_sanitized_data.csv", True)
-A5O_Thickness, A5O_COR, A5O_COR_err = selfmadefunctions.read_saladin_data("A5_O_sanitized_data.csv", True)
+A4_Thickness, A4_COR, A4_COR_err = selfmadefunctions.read_saladin_data("A4_sanitized_data.csv", True, 1)
+A5B_Thickness, A5B_COR, A5B_COR_err = selfmadefunctions.read_saladin_data("A5_B_sanitized_data.csv", True, 1)
+A5O_Thickness, A5O_COR, A5O_COR_err = selfmadefunctions.read_saladin_data("A5_O_sanitized_data.csv", True, 1)
 
 plt.errorbar(A4_Thickness, A4_COR, yerr = A4_COR_err, fmt = 'o', label = 'A4 Sheets')
 plt.errorbar(A5B_Thickness, A5B_COR, yerr = A5B_COR_err, fmt = 'o', label = 'A5_B Sheets')
