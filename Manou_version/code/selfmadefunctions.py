@@ -10,146 +10,6 @@ import cv2
 
 # Author: Manou Liesker. Student number: 15250946
 
-# The camera from the measurements of Maria and Manou was turned 90 degrees, 
-# Making positive movement in X equal negative vertical movement. 
-# This function creates a new csv file that's easier to work with. 
-# (Positive Y movement = positive vertical movement and y=0 is the point at wich the ball touches the floor.)
-# This also turns the filetype from .mqa into a .csv file, like the other ones.
-def coordinate_swap(filename, folder):    # folder = metingen_0_40 of metingen_0_500
- 
-    NETWORK_FOLDER = Path(rf"Z:\Data_Manou_Maria\{folder}")
-
-    file_path = NETWORK_FOLDER / f"{filename}.mqa"
-    data_current =  pd.read_csv(file_path, sep='\t')
-
-    omgedraaid_y_current = data_current.iloc[:, 2] # Camera is 90 graden gedraaid. Dit zorgt ervoor dat x maximaal is wanneer de bal op het papier ligt.
-    frame_current = data_current.iloc[:, 0]
-    laagste_y_current = max(omgedraaid_y_current) # op dit coordinaat ligt de bal op het papier
-    
-    y_current = []
-    for oy in omgedraaid_y_current:
-        y = laagste_y_current - oy 
-        y_current.append(y)
-
-    cleaned_file = pd.DataFrame(
-    {'Frame': frame_current,
-     'Y': y_current,
-    })
-
-    cleaned_file.to_csv(f"{filename}_clean.csv", index = False)
-
-# Isolates the second bounce.
-# Input: Networkfolder adress, filename, thickness at measurement, Plot (True or False)
-# Output: The drop height and the frames/y-points of the isolated first bounce. If Plot = True, it shows the method it uses to find the first bounce.
-def databewerken(networkfolder, filename, thickness, Plot):
-    # tweak these
-    N_points = 5
-    leniency = 5
-    y_err = 1
-
-    # maybe tweak these for better results
-    sigma = 2
-    
-    # dont tweak these
-    Total_first_N_points = 0
-    delete_first_elements = 0
-    laagtepunt_1 = 0
-    laagtepunt_2 = 0
-
-    file_path = networkfolder / f"{filename}.csv"
-    data_current =  pd.read_csv(file_path)
-
-    y_points = data_current.iloc[:, 1] #Camera hangt scheef, dus omdraaien en lezen van de x-coordinaten.
-    frames = data_current.iloc[:, 0]
-
-    # ervoor zorgen dat eerste rechte data wordt afgeknipt
-    for i in range(N_points):           # gemiddelde nemen van eerste N punten
-        Total_first_N_points += y_points[i]
-    average_first_N_points = Total_first_N_points / N_points # wordt genomen als "drop height"
-    
-    while abs(y_points[delete_first_elements] - average_first_N_points) < leniency:        # wachten tot een punt te ver van het gemiddelde van de eerste N af zit. AKA wanneer valt het?
-        delete_first_elements += 1
-    
-    afgeknipt_y = y_points[delete_first_elements:]     # Deze punten afknippen
-    afgeknipt_frame = frames[delete_first_elements:]   # Deze punten afknippen
-    smoothed = gaussian_filter1d(afgeknipt_y, sigma = sigma)     # hier een gaussisch filter overheen halen, zodat alle punten mooi zijn
-
-    afgeknipt_y = y_points[delete_first_elements:].to_numpy(dtype=float)
-    afgeknipt_frame = frames[delete_first_elements:].to_numpy(dtype=float)
-
-    mask = ~np.isnan(afgeknipt_y)
-    afgeknipt_y = afgeknipt_y[mask]
-    afgeknipt_frame = afgeknipt_frame[mask]
-
-    smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
-
-
-
-    for i in range(len(smoothed) - 1):
-        if smoothed[i] < smoothed[i + 1] and smoothed[i] < smoothed[i-1]:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
-            if laagtepunt_1 == 0:
-                laagtepunt_1 = i + 1
-            else:
-                laagtepunt_2 = i - 2
-                break
-        
-    
-    y = [0, average_first_N_points]
-    x1 = [laagtepunt_1 + delete_first_elements, laagtepunt_1 + delete_first_elements]
-    x2 = [laagtepunt_2 + delete_first_elements, laagtepunt_2 + delete_first_elements]
-
-    frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
-    y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
-
-    if Plot:
-        fig, ax = plt.subplots(1, 3, figsize=(18, 5))
-        
-        print(f'Thickness = {thickness}')
-        print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
-        print(f'The ball is released at y = {average_first_N_points} pixels.')
-        print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
-
-        # Grafiek 1
-        ax[0].errorbar(frames, y_points, yerr=y_err)
-        ax[0].plot(
-            [delete_first_elements - 200, delete_first_elements + 200],
-            [average_first_N_points, average_first_N_points],
-            'b--'
-        )
-        ax[0].plot(
-            [delete_first_elements, delete_first_elements],
-            [average_first_N_points + 100, 0],
-            'r--'
-        )
-        ax[0].set_xlabel('Time (frames)')
-        ax[0].set_ylabel('Height [pixels]')
-        ax[0].set_title('Beginning Data')
-
-        # Grafiek 2
-        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
-        ax[1].plot(x1, y, 'r--')
-        ax[1].plot(x2, y, 'r--')
-        ax[1].set_xlabel('Time (frames)')
-        ax[1].set_ylabel('Height (pixels)')
-        ax[1].set_title('Data from moment of release')
-
-        # Grafiek 3
-        ax[2].errorbar(
-            frame_bounce,
-            y_bounce,
-            yerr=y_err,
-            markersize=2,
-            fmt='o'
-        )
-        ax[2].set_xlabel('Time (frames)')
-        ax[2].set_ylabel('Height (pixels)')
-        ax[2].set_title('Isolated first Bounce')
-
-        fig.suptitle(f'Measurement on thickness {thickness}, filename = {filename}')
-        plt.tight_layout()
-        plt.show()
-
-    return average_first_N_points, frame_bounce, y_bounce  #Returns the drop height en the trajectory of the relevant bounce.
 
 # Fits a parabola to an isolated bounce
 # Input: Frames and y-points of an isolated bounce (So that you only have a parabola), Plot (True or False), fit_report (True or False)
@@ -200,6 +60,222 @@ def parabola_fit(frames, y_points, Plot, fit_report):
         plt.show()
 
     return bounce_height
+
+def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv):
+    input_path = str(video_inputfolder / filename)
+
+    cap = cv2.VideoCapture(input_path)
+
+    if save_video:
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 30
+
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        output_path = str(video_outputfolder / f"{Path(filename).stem}_tracked.avi")
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
+
+    x_points = []
+    y_points = []
+    frame_numbers = []
+
+    threshold_value = 90
+    min_area = 3
+    max_area = 100
+    frame_idx = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        small_contours = [
+            cnt for cnt in contours
+            if min_area <= cv2.contourArea(cnt) <= max_area
+        ]
+
+        frame_numbers.append(frame_idx)
+
+        if small_contours:
+            cnt = max(small_contours, key=cv2.contourArea)
+
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = M["m10"] / M["m00"]
+                cy = M["m01"] / M["m00"]
+
+                x_points.append(cx)
+                y_points.append(cy)
+
+                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
+                cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+            else:
+                x_points.append(np.nan)
+                y_points.append(np.nan)
+        else:
+            x_points.append(np.nan)
+            y_points.append(np.nan)
+
+        if show:
+            cv2.imshow("tracking", frame)
+            cv2.imshow("mask", mask)
+            if cv2.waitKey(30) == 27:
+                break
+
+        if save_video:
+            out.write(frame)
+
+        frame_idx += 1
+
+    cap.release()
+
+    if save_video:
+        out.release()
+        print("Saved video to:", output_path)
+
+    if save_csv:
+        lowest_y = np.nanmax(y_points)
+        new_points = []
+
+        for y in y_points:
+            new_y = lowest_y - y if not np.isnan(y) else np.nan
+            new_points.append(new_y)
+
+        cleaned_file = pd.DataFrame({
+            'Frame': frame_numbers,
+            'Y': new_points
+        })
+
+        csv_path = csv_outputfolder / f"{Path(filename).stem}_clean.csv"
+        cleaned_file.to_csv(csv_path, index=False)
+        print(f"Saved as {csv_path}")
+
+    cv2.destroyAllWindows()
+
+# Made as a more general version to calculate any type of COR.  
+def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
+    # tweak these
+    N_points = 5
+    leniency = 5
+    y_err = 1
+
+    # maybe tweak these for better results
+    sigma = 2
+    
+    # dont tweak these
+    Total_first_N_points = 0
+    delete_first_elements = 0
+    laagtepunt_1 = 0
+    laagtepunt_2 = 0
+
+    file_path = inputfolder / f"{filename}.csv"
+    data_current =  pd.read_csv(file_path)
+
+    y_points = data_current.iloc[:, 1] 
+    frames = data_current.iloc[:, 0]
+
+    # ervoor zorgen dat eerste rechte data wordt afgeknipt
+    for i in range(N_points):           # gemiddelde nemen van eerste N punten
+        Total_first_N_points += y_points[i]
+    average_first_N_points = Total_first_N_points / N_points # wordt genomen als "drop height"
+    
+    while abs(y_points[delete_first_elements] - average_first_N_points) < leniency:        # wachten tot een punt te ver van het gemiddelde van de eerste N af zit. AKA wanneer valt het?
+        delete_first_elements += 1
+    
+    afgeknipt_y = y_points[delete_first_elements:]     # Deze punten afknippen
+    afgeknipt_frame = frames[delete_first_elements:]   # Deze punten afknippen
+    smoothed = gaussian_filter1d(afgeknipt_y, sigma = sigma)     # hier een gaussisch filter overheen halen, zodat alle punten mooi zijn
+
+    afgeknipt_y = y_points[delete_first_elements:].to_numpy(dtype=float)
+    afgeknipt_frame = frames[delete_first_elements:].to_numpy(dtype=float)
+
+    mask = ~np.isnan(afgeknipt_y)
+    afgeknipt_y = afgeknipt_y[mask]
+    afgeknipt_frame = afgeknipt_frame[mask]
+
+    smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
+
+
+
+    for i in range(len(smoothed) - 1):
+        if smoothed[i] < smoothed[i + 1] and smoothed[i] < smoothed[i-1]:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
+            if laagtepunt_1 == 0:
+                laagtepunt_1 = i + 1
+            else:
+                laagtepunt_2 = i - 2
+                break
+        
+    
+    y = [0, average_first_N_points]
+    x1 = [laagtepunt_1 + delete_first_elements, laagtepunt_1 + delete_first_elements]
+    x2 = [laagtepunt_2 + delete_first_elements, laagtepunt_2 + delete_first_elements]
+
+    frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
+    y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
+
+    if Find_Plot:
+        fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+        
+        print(f'{variable_type} = {variable_value}')
+        print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
+        print(f'The ball is released at y = {average_first_N_points} pixels.')
+        print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
+
+        # Grafiek 1
+        ax[0].errorbar(frames, y_points, yerr=y_err)
+        ax[0].plot(
+            [delete_first_elements - 200, delete_first_elements + 200],
+            [average_first_N_points, average_first_N_points],
+            'b--'
+        )
+        ax[0].plot(
+            [delete_first_elements, delete_first_elements],
+            [average_first_N_points + 100, 0],
+            'r--'
+        )
+        ax[0].set_xlabel('Time (frames)')
+        ax[0].set_ylabel('Height [pixels]')
+        ax[0].set_title('Beginning Data')
+
+        # Grafiek 2
+        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
+        ax[1].plot(x1, y, 'r--')
+        ax[1].plot(x2, y, 'r--')
+        ax[1].set_xlabel('Time (frames)')
+        ax[1].set_ylabel('Height (pixels)')
+        ax[1].set_title('Data from moment of release')
+
+        # Grafiek 3
+        ax[2].errorbar(
+            frame_bounce,
+            y_bounce,
+            yerr=y_err,
+            markersize=2,
+            fmt='o'
+        )
+        ax[2].set_xlabel('Time (frames)')
+        ax[2].set_ylabel('Height (pixels)')
+        ax[2].set_title('Isolated first Bounce')
+
+        fig.suptitle(f'Measurement on {variable_type} {variable_value}, filename = {filename}')
+        plt.tight_layout()
+        plt.show()
+
+        bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report)
+        COR = np.sqrt(bounce_height/average_first_N_points)
+
+        return COR
+
 
 # Calculates all the COR's of a given file and plots them
 # Input: Networkfolder adress, how the file begins (example: T3), list of thickness, the amount of repetitions at each thickness, Plot (True or False)
@@ -293,202 +369,3 @@ def calculate_COR_Vacuum(networkfolder, filename, value):
     COR = np.sqrt(bounce_height/drop_height)
     COR_err = 0 # not actual error, but couldnt calculate one.
     return COR, COR_err
-
-    NETWORK_FOLDER = Path(r"Z:\Video_Files")
-    input_path = str(NETWORK_FOLDER / filename)
-
-    cap = cv2.VideoCapture(input_path)
-
-    if save_video:
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        if fps <= 0:
-            fps = 30
-
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        output_path = str(NETWORK_FOLDER / f"{Path(filename).stem}_tracked.avi")
-        fourcc = cv2.VideoWriter_fourcc(*"XVID")
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
-
-    x_points = []
-    y_points = []
-    frame_numbers = []
-
-    threshold_value = 100
-    min_area = 3
-    max_area = 100
-    frame_idx = 0
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
-
-        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
-
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        small_contours = [
-            cnt for cnt in contours
-            if min_area <= cv2.contourArea(cnt) <= max_area
-        ]
-
-        frame_numbers.append(frame_idx)
-
-        if small_contours:
-            cnt = max(small_contours, key=cv2.contourArea)
-
-            M = cv2.moments(cnt)
-            if M["m00"] != 0:
-                cx = M["m10"] / M["m00"]
-                cy = M["m01"] / M["m00"]
-
-                x_points.append(cx)
-                y_points.append(cy)
-
-                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
-                cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
-            else:
-                x_points.append(np.nan)
-                y_points.append(np.nan)
-        else:
-            x_points.append(np.nan)
-            y_points.append(np.nan)
-
-        if show:
-            cv2.imshow("tracking", frame)
-            cv2.imshow("mask", mask)
-            if cv2.waitKey(30) == 27:
-                break
-
-        if save_video:
-            out.write(frame)
-
-        frame_idx += 1
-
-    cap.release()
-
-    if save_video:
-        out.release()
-        print("Saved video to:", output_path)
-
-    if save_csv:
-        print(y_points)
-        lowest_y = max(y_points)
-        new_points = []
-        for y in y_points:
-            new_y = lowest_y - y
-            new_points.append(new_y)
-
-        cleaned_file = pd.DataFrame({'Frame': frame_numbers,'Y': y_points})
-
-        cleaned_file.to_csv(f"{filename.stem}_clean.csv", index = False)
-        print(f"Saved as {filename.stem}_clean.csv")
-
-    cv2.destroyAllWindows()
-
-def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv):
-    input_path = str(video_inputfolder / filename)
-
-    cap = cv2.VideoCapture(input_path)
-
-    if save_video:
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        if fps <= 0:
-            fps = 30
-
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        output_path = str(video_outputfolder / f"{Path(filename).stem}_tracked.avi")
-        fourcc = cv2.VideoWriter_fourcc(*"XVID")
-        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
-
-    x_points = []
-    y_points = []
-    frame_numbers = []
-
-    threshold_value = 100
-    min_area = 3
-    max_area = 100
-    frame_idx = 0
-
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
-
-        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
-
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-        small_contours = [
-            cnt for cnt in contours
-            if min_area <= cv2.contourArea(cnt) <= max_area
-        ]
-
-        frame_numbers.append(frame_idx)
-
-        if small_contours:
-            cnt = max(small_contours, key=cv2.contourArea)
-
-            M = cv2.moments(cnt)
-            if M["m00"] != 0:
-                cx = M["m10"] / M["m00"]
-                cy = M["m01"] / M["m00"]
-
-                x_points.append(cx)
-                y_points.append(cy)
-
-                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
-                cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
-            else:
-                x_points.append(np.nan)
-                y_points.append(np.nan)
-        else:
-            x_points.append(np.nan)
-            y_points.append(np.nan)
-
-        if show:
-            cv2.imshow("tracking", frame)
-            cv2.imshow("mask", mask)
-            if cv2.waitKey(30) == 27:
-                break
-
-        if save_video:
-            out.write(frame)
-
-        frame_idx += 1
-
-    cap.release()
-
-    if save_video:
-        out.release()
-        print("Saved video to:", output_path)
-
-    if save_csv:
-        lowest_y = np.nanmax(y_points)
-        new_points = []
-
-        for y in y_points:
-            new_y = lowest_y - y if not np.isnan(y) else np.nan
-            new_points.append(new_y)
-
-        cleaned_file = pd.DataFrame({
-            'Frame': frame_numbers,
-            'Y': new_points
-        })
-
-        csv_path = csv_outputfolder / f"{Path(filename).stem}_clean.csv"
-        cleaned_file.to_csv(csv_path, index=False)
-        print(f"Saved as {csv_path}")
-
-    cv2.destroyAllWindows()
-
