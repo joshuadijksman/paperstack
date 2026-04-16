@@ -391,8 +391,8 @@ def calculate_COR_Vacuum(networkfolder, filename, value):
 
     cv2.destroyAllWindows()
 
-def track_video(networkfolder, filename, show, save_video, save_csv):
-    input_path = str(networkfolder / filename)
+def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv):
+    input_path = str(video_inputfolder / filename)
 
     cap = cv2.VideoCapture(input_path)
 
@@ -404,7 +404,7 @@ def track_video(networkfolder, filename, show, save_video, save_csv):
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        output_path = str(networkfolder / f"{Path(filename).stem}_tracked.avi")
+        output_path = str(video_outputfolder / f"{Path(filename).stem}_tracked.avi")
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
 
@@ -486,8 +486,7 @@ def track_video(networkfolder, filename, show, save_video, save_csv):
             'Y': new_points
         })
 
-        NETWORK_FOLDER = Path(r"Z:\Clean_Data\Data_Manou_Thesis_Clean")
-        csv_path = NETWORK_FOLDER / f"{Path(filename).stem}_clean.csv"
+        csv_path = csv_outputfolder / f"{Path(filename).stem}_clean.csv"
         cleaned_file.to_csv(csv_path, index=False)
         print(f"Saved as {csv_path}")
 
