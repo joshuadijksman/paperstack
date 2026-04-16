@@ -6,6 +6,7 @@ from scipy.stats import chi2
 import math as math
 from scipy.ndimage import gaussian_filter1d
 from pathlib import Path
+import cv2
 
 # Author: Manou Liesker. Student number: 15250946
 
@@ -293,5 +294,202 @@ def calculate_COR_Vacuum(networkfolder, filename, value):
     COR_err = 0 # not actual error, but couldnt calculate one.
     return COR, COR_err
 
+    NETWORK_FOLDER = Path(r"Z:\Video_Files")
+    input_path = str(NETWORK_FOLDER / filename)
 
+    cap = cv2.VideoCapture(input_path)
+
+    if save_video:
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 30
+
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        output_path = str(NETWORK_FOLDER / f"{Path(filename).stem}_tracked.avi")
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
+
+    x_points = []
+    y_points = []
+    frame_numbers = []
+
+    threshold_value = 100
+    min_area = 3
+    max_area = 100
+    frame_idx = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        small_contours = [
+            cnt for cnt in contours
+            if min_area <= cv2.contourArea(cnt) <= max_area
+        ]
+
+        frame_numbers.append(frame_idx)
+
+        if small_contours:
+            cnt = max(small_contours, key=cv2.contourArea)
+
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = M["m10"] / M["m00"]
+                cy = M["m01"] / M["m00"]
+
+                x_points.append(cx)
+                y_points.append(cy)
+
+                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
+                cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+            else:
+                x_points.append(np.nan)
+                y_points.append(np.nan)
+        else:
+            x_points.append(np.nan)
+            y_points.append(np.nan)
+
+        if show:
+            cv2.imshow("tracking", frame)
+            cv2.imshow("mask", mask)
+            if cv2.waitKey(30) == 27:
+                break
+
+        if save_video:
+            out.write(frame)
+
+        frame_idx += 1
+
+    cap.release()
+
+    if save_video:
+        out.release()
+        print("Saved video to:", output_path)
+
+    if save_csv:
+        print(y_points)
+        lowest_y = max(y_points)
+        new_points = []
+        for y in y_points:
+            new_y = lowest_y - y
+            new_points.append(new_y)
+
+        cleaned_file = pd.DataFrame({'Frame': frame_numbers,'Y': y_points})
+
+        cleaned_file.to_csv(f"{filename.stem}_clean.csv", index = False)
+        print(f"Saved as {filename.stem}_clean.csv")
+
+    cv2.destroyAllWindows()
+
+def track_video(networkfolder, filename, show, save_video, save_csv):
+    input_path = str(networkfolder / filename)
+
+    cap = cv2.VideoCapture(input_path)
+
+    if save_video:
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 30
+
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        output_path = str(networkfolder / f"{Path(filename).stem}_tracked.avi")
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
+
+    x_points = []
+    y_points = []
+    frame_numbers = []
+
+    threshold_value = 100
+    min_area = 3
+    max_area = 100
+    frame_idx = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        small_contours = [
+            cnt for cnt in contours
+            if min_area <= cv2.contourArea(cnt) <= max_area
+        ]
+
+        frame_numbers.append(frame_idx)
+
+        if small_contours:
+            cnt = max(small_contours, key=cv2.contourArea)
+
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = M["m10"] / M["m00"]
+                cy = M["m01"] / M["m00"]
+
+                x_points.append(cx)
+                y_points.append(cy)
+
+                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
+                cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+            else:
+                x_points.append(np.nan)
+                y_points.append(np.nan)
+        else:
+            x_points.append(np.nan)
+            y_points.append(np.nan)
+
+        if show:
+            cv2.imshow("tracking", frame)
+            cv2.imshow("mask", mask)
+            if cv2.waitKey(30) == 27:
+                break
+
+        if save_video:
+            out.write(frame)
+
+        frame_idx += 1
+
+    cap.release()
+
+    if save_video:
+        out.release()
+        print("Saved video to:", output_path)
+
+    if save_csv:
+        lowest_y = np.nanmax(y_points)
+        new_points = []
+
+        for y in y_points:
+            new_y = lowest_y - y if not np.isnan(y) else np.nan
+            new_points.append(new_y)
+
+        cleaned_file = pd.DataFrame({
+            'Frame': frame_numbers,
+            'Y': new_points
+        })
+
+        NETWORK_FOLDER = Path(r"Z:\Clean_Data\Data_Manou_Thesis_Clean")
+        csv_path = NETWORK_FOLDER / f"{Path(filename).stem}_clean.csv"
+        cleaned_file.to_csv(csv_path, index=False)
+        print(f"Saved as {csv_path}")
+
+    cv2.destroyAllWindows()
 
