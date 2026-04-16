@@ -78,13 +78,8 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     y_points[nan_mask] = np.interp(np.flatnonzero(nan_mask),np.flatnonzero(not_nan),y_points[not_nan])
 
     
-    while True:
-        if abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) > leniency:
-                break
-        else:
+    while abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) < leniency:
             delete_first_elements += 1
-
-
 
     delete_first_elements -= 30 # dertig frames terugspoelen, tot voor hij viel.
     drop_height = y_points[delete_first_elements]
