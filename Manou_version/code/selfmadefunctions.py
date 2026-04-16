@@ -2,8 +2,6 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from lmfit import Model
-from scipy.stats import chi2
-import math as math
 from scipy.ndimage import gaussian_filter1d
 from pathlib import Path
 import cv2
@@ -167,7 +165,7 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
 # Made as a more general version to calculate any type of COR.  
 def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
     # tweak these
-    N_points = 5
+
     leniency = 5
     y_err = 1
 
@@ -175,8 +173,8 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     sigma = 2
     
     # dont tweak these
-    Total_first_N_points = 0
-    delete_first_elements = 0
+
+    delete_first_elements = 1
     laagtepunt_1 = 0
     laagtepunt_2 = 0
 
@@ -186,18 +184,21 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     y_points = data_current.iloc[:, 1] 
     frames = data_current.iloc[:, 0]
 
-    # ervoor zorgen dat eerste rechte data wordt afgeknipt
-    for i in range(N_points):           # gemiddelde nemen van eerste N punten
-        Total_first_N_points += y_points[i]
-    average_first_N_points = Total_first_N_points / N_points # wordt genomen als "drop height"
-    
-    while abs(y_points[delete_first_elements] - average_first_N_points) < leniency:        # wachten tot een punt te ver van het gemiddelde van de eerste N af zit. AKA wanneer valt het?
-        delete_first_elements += 1
-    
-    afgeknipt_y = y_points[delete_first_elements:]     # Deze punten afknippen
-    afgeknipt_frame = frames[delete_first_elements:]   # Deze punten afknippen
-    smoothed = gaussian_filter1d(afgeknipt_y, sigma = sigma)     # hier een gaussisch filter overheen halen, zodat alle punten mooi zijn
+    nan_mask = np.isnan(y_points)
+    not_nan = ~nan_mask
 
+    y_points[nan_mask] = np.interp(np.flatnonzero(nan_mask),np.flatnonzero(not_nan),y_points[not_nan])
+
+    
+    while True:
+        if abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) > leniency:
+                break
+        else:
+            delete_first_elements += 1
+
+    delete_first_elements -= 30 # dertig frames terugspoelen, tot voor hij viel.
+    drop_height = y_points[delete_first_elements]
+    
     afgeknipt_y = y_points[delete_first_elements:].to_numpy(dtype=float)
     afgeknipt_frame = frames[delete_first_elements:].to_numpy(dtype=float)
 
@@ -218,7 +219,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
                 break
         
     
-    y = [0, average_first_N_points]
+    y = [0, drop_height]
     x1 = [laagtepunt_1 + delete_first_elements, laagtepunt_1 + delete_first_elements]
     x2 = [laagtepunt_2 + delete_first_elements, laagtepunt_2 + delete_first_elements]
 
@@ -230,19 +231,19 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         
         print(f'{variable_type} = {variable_value}')
         print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
-        print(f'The ball is released at y = {average_first_N_points} pixels.')
+        print(f'The ball is released at y = {drop_height} pixels.')
         print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
 
         # Grafiek 1
         ax[0].errorbar(frames, y_points, yerr=y_err)
         ax[0].plot(
             [delete_first_elements - 200, delete_first_elements + 200],
-            [average_first_N_points, average_first_N_points],
+            [drop_height, drop_height],
             'b--'
         )
         ax[0].plot(
             [delete_first_elements, delete_first_elements],
-            [average_first_N_points + 100, 0],
+            [drop_height + 100, 0],
             'r--'
         )
         ax[0].set_xlabel('Time (frames)')
@@ -274,9 +275,14 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         plt.show()
 
         bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report)
-        COR = np.sqrt(bounce_height/average_first_N_points)
+        COR = np.sqrt(bounce_height/drop_height)
 
         return COR
+
+
+
+
+
 
 ############################## Specific functions for specific files ###############################3
 

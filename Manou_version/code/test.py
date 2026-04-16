@@ -2,42 +2,169 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from lmfit import Model
-from scipy.stats import chi2
 import math as math
 from scipy.ndimage import gaussian_filter1d
-from pathlib import Path
-import selfmadefunctions
-import importlib
-importlib.reload(selfmadefunctions)
 
-# Author: Manou Liesker, Student number: 15250946
+def parabola_fit(frames, y_points, Plot, fit_report):
 
-NETWORK_FOLDER = Path(rf"Z:\Clean_Data\Data_Manou_Maria_Clean")
-T3_Thicknesses = [0, 20, 40, 60, 80, 100, 140, 180, 200, 250, 300, 350, 400, 500]
-V_Thicknesses = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 25, 30, 35, 40]
+    def fit_function(t, a, t_0, b):
+        return a * (t - t_0)**2 + b
 
-T_COR, T_COR_err = selfmadefunctions.calulate_COR(NETWORK_FOLDER, 'T3', T3_Thicknesses, 3, False) # (networkfolder, filebegin, thicknesslist, repetitions, Plot)
-V_COR, V_COR_err = selfmadefunctions.calulate_COR(NETWORK_FOLDER, 'V', V_Thicknesses, 3, False)
+    calibration_model = Model(fit_function)
+    fit_result = calibration_model.fit(y_points, t=frames, a=20, t_0=70, b=200, weights=1)
+    bounce_height = fit_result.params['b'].value
 
-plt.errorbar(T3_Thicknesses, T_COR, yerr= T_COR_err, fmt = 'o', label = "Measurements day 1")
-plt.errorbar(V_Thicknesses, V_COR, yerr= V_COR_err, fmt = 'o', label = "Measurements day 2")
-plt.title('The COR as a function of substrate thickness')
-plt.xlabel('Thickness (paper layers)')
-plt.ylabel('Coefficient of restitution')
-plt.legend()
-plt.show()
+    if fit_report:
+        print(fit_result.fit_report())
+
+    if Plot:
+        fit_y = fit_result.best_fit
+        residuals = y_points - fit_y
+        rmse = np.sqrt(np.mean(residuals**2))
+
+        fig, (ax_res, ax_main) = plt.subplots(
+            2, 1, figsize=(5, 4), sharex=True,
+            gridspec_kw={'height_ratios': [1, 3]}
+        )
+
+        print(f'bounce height = {bounce_height} pixels')
+        print(f'RMSE = {rmse:.2f} pixels')
+
+        # residual plot
+        ax_res.axhline(0, linestyle='--')
+        ax_res.errorbar(frames, residuals, yerr = 1, fmt = 'o', markersize=3)
+        ax_res.set_ylabel('Residual')
+        ax_res.set_title(f'Fit quality (RMSE = {rmse:.2f} px)')
+
+        # main plot
+        ax_main.errorbar(frames, y_points, label='Data', yerr=1, fmt='None', markersize=1, zorder=2)
+        ax_main.plot(frames, fit_y, label='Fit', zorder=1)
+        ax_main.plot([min(frames), max(frames)], [bounce_height, bounce_height],
+                     label='Bounce height', linestyle='--')
+
+        ax_main.set_xlabel('Time (frames)')
+        ax_main.set_ylabel('Height (pixels)')
+        ax_main.set_title('Data and fit')
+        ax_main.legend()
+
+        plt.tight_layout()
+        plt.show()
+    return bounce_height
+
+def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
+    # tweak these
+
+    leniency = 5
+    y_err = 1
+
+    # maybe tweak these for better results
+    sigma = 2
+    
+    # dont tweak these
+
+    delete_first_elements = 1
+    laagtepunt_1 = 0
+    laagtepunt_2 = 0
+
+    file_path = inputfolder / f"{filename}.csv"
+    data_current =  pd.read_csv(file_path)
+
+    y_points = data_current.iloc[:, 1] 
+    frames = data_current.iloc[:, 0]
+
+    nan_mask = np.isnan(y_points)
+    not_nan = ~nan_mask
+
+    y_points[nan_mask] = np.interp(np.flatnonzero(nan_mask),np.flatnonzero(not_nan),y_points[not_nan])
+
+    
+    while True:
+        if abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) > leniency:
+                break
+        else:
+            delete_first_elements += 1
 
 
-A4_Thickness, A4_COR, A4_COR_err = selfmadefunctions.read_saladin_data("A4_sanitized_data.csv", True, 1)
-A5B_Thickness, A5B_COR, A5B_COR_err = selfmadefunctions.read_saladin_data("A5_B_sanitized_data.csv", True, 1)
-A5O_Thickness, A5O_COR, A5O_COR_err = selfmadefunctions.read_saladin_data("A5_O_sanitized_data.csv", True, 1)
 
-plt.errorbar(A4_Thickness, A4_COR, yerr = A4_COR_err, fmt = 'o', label = 'A4 Sheets')
-plt.errorbar(A5B_Thickness, A5B_COR, yerr = A5B_COR_err, fmt = 'o', label = 'A5_B Sheets')
-plt.errorbar(A5O_Thickness, A5O_COR, yerr = A5O_COR_err, fmt = 'o', label = 'A5_O Sheets')
-plt.title("Saladin's Data combined")
-plt.xlabel("Thickness (Paper sheets)")
-plt.ylabel("Coefficient of Restitution")
-plt.legend()
-plt.show()
+    delete_first_elements -= 30 # dertig frames terugspoelen, tot voor hij viel.
+    drop_height = y_points[delete_first_elements]
+    
+    afgeknipt_y = y_points[delete_first_elements:].to_numpy(dtype=float)
+    afgeknipt_frame = frames[delete_first_elements:].to_numpy(dtype=float)
 
+    mask = ~np.isnan(afgeknipt_y)
+    afgeknipt_y = afgeknipt_y[mask]
+    afgeknipt_frame = afgeknipt_frame[mask]
+
+    smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
+
+
+
+    for i in range(len(smoothed) - 1):
+        if smoothed[i] < smoothed[i + 1] and smoothed[i] < smoothed[i-1]:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
+            if laagtepunt_1 == 0:
+                laagtepunt_1 = i + 1
+            else:
+                laagtepunt_2 = i - 2
+                break
+        
+    
+    y = [0, drop_height]
+    x1 = [laagtepunt_1 + delete_first_elements, laagtepunt_1 + delete_first_elements]
+    x2 = [laagtepunt_2 + delete_first_elements, laagtepunt_2 + delete_first_elements]
+
+    frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
+    y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
+
+    if Find_Plot:
+        fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+        
+        print(f'{variable_type} = {variable_value}')
+        print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
+        print(f'The ball is released at y = {drop_height} pixels.')
+        print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
+
+        # Grafiek 1
+        ax[0].errorbar(frames, y_points, yerr=y_err)
+        ax[0].plot(
+            [delete_first_elements - 200, delete_first_elements + 200],
+            [drop_height, drop_height],
+            'b--'
+        )
+        ax[0].plot(
+            [delete_first_elements, delete_first_elements],
+            [drop_height + 100, 0],
+            'r--'
+        )
+        ax[0].set_xlabel('Time (frames)')
+        ax[0].set_ylabel('Height [pixels]')
+        ax[0].set_title('Beginning Data')
+
+        # Grafiek 2
+        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
+        ax[1].plot(x1, y, 'r--')
+        ax[1].plot(x2, y, 'r--')
+        ax[1].set_xlabel('Time (frames)')
+        ax[1].set_ylabel('Height (pixels)')
+        ax[1].set_title('Data from moment of release')
+
+        # Grafiek 3
+        ax[2].errorbar(
+            frame_bounce,
+            y_bounce,
+            yerr=y_err,
+            markersize=2,
+            fmt='o'
+        )
+        ax[2].set_xlabel('Time (frames)')
+        ax[2].set_ylabel('Height (pixels)')
+        ax[2].set_title('Isolated first Bounce')
+
+        fig.suptitle(f'Measurement on {variable_type} {variable_value}, filename = {filename}')
+        plt.tight_layout()
+        plt.show()
+
+        bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report)
+        COR = np.sqrt(bounce_height/drop_height)
+
+        return COR
