@@ -83,7 +83,7 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
     frame_numbers = []
 
     threshold_value = 90
-    min_area = 3
+    min_area = 40
     max_area = 100
     frame_idx = 0
 
@@ -93,11 +93,13 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
             break
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (5, 5), 0)
+        gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Draw all thresholded contours in blue for debugging
+        cv2.drawContours(frame, contours, -1, (255, 0, 0), 1)
 
         small_contours = [
             cnt for cnt in contours
