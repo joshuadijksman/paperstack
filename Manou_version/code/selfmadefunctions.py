@@ -202,9 +202,10 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
     # maybe tweak these for better results
     sigma = 2
+    nan_run_limit = 20
+    outlier_limit = 50
 
     # dont tweak these
-
     delete_first_elements = 1
     laagtepunt_1 = 0
     laagtepunt_2 = 0
@@ -219,6 +220,23 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     original_nan_mask = np.isnan(y_points)
     original_valid_mask = ~original_nan_mask
 
+    # ---- 1) If there is a run of 30 original NaNs, delete everything from there on ----
+    nan_int = original_nan_mask.astype(int)
+    kernel = np.ones(nan_run_limit, dtype=int)
+    run_sums = np.convolve(nan_int, kernel, mode="valid")
+
+    if np.any(run_sums == nan_run_limit):
+        first_nan_run_start = np.flatnonzero(run_sums == nan_run_limit)[0]
+        y_points = y_points[:first_nan_run_start]
+        frames = frames[:first_nan_run_start]
+        original_nan_mask = original_nan_mask[:first_nan_run_start]
+        original_valid_mask = original_valid_mask[:first_nan_run_start]
+
+    # Safety check
+    if np.sum(original_valid_mask) < 2:
+        print(f"Warning: not enough valid points in {filename}.")
+        return np.nan
+
     # Interpolate NaNs
     y_points[original_nan_mask] = np.interp(
         np.flatnonzero(original_nan_mask),
@@ -226,45 +244,66 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         y_points[original_valid_mask]
     )
 
-    while abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) < leniency:
+    while (
+        delete_first_elements < len(y_points)
+        and abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) < leniency
+    ):
         delete_first_elements += 1
 
-    delete_first_elements -= 30  # rewind 30 frames, to before the ball fell.
+    delete_first_elements = max(0, delete_first_elements - 30)  # rewind 30 frames
     drop_height = y_points[delete_first_elements]
 
     afgeknipt_y = y_points[delete_first_elements:].copy()
     afgeknipt_frame = frames[delete_first_elements:].copy()
-
-    # Also crop the ORIGINAL valid-mask in the same way
     afgeknipt_original_valid = original_valid_mask[delete_first_elements:]
 
     # Keep only up to the last originally valid datapoint
-    last_valid_idx = np.flatnonzero(afgeknipt_original_valid)[-1]
-    afgeknipt_y = afgeknipt_y[:last_valid_idx]
-    afgeknipt_frame = afgeknipt_frame[:last_valid_idx]
-    afgeknipt_original_valid = afgeknipt_original_valid[:last_valid_idx]
+    if np.any(afgeknipt_original_valid):
+        last_valid_idx = np.flatnonzero(afgeknipt_original_valid)[-1] + 1
+        afgeknipt_y = afgeknipt_y[:last_valid_idx]
+        afgeknipt_frame = afgeknipt_frame[:last_valid_idx]
+        afgeknipt_original_valid = afgeknipt_original_valid[:last_valid_idx]
+    else:
+        print(f"Warning: no valid cropped points in {filename}.")
+        return np.nan
 
     # Remove points that were originally NaN inside the cropped array
     afgeknipt_y = afgeknipt_y[afgeknipt_original_valid]
     afgeknipt_frame = afgeknipt_frame[afgeknipt_original_valid]
 
+    # ---- 2) Remove points that are 30 pixels or more away from their neighbors ----
+    if len(afgeknipt_y) >= 3:
+        keep_mask = np.ones(len(afgeknipt_y), dtype=bool)
+
+        for i in range(1, len(afgeknipt_y) - 1):
+            if (
+                abs(afgeknipt_y[i] - afgeknipt_y[i - 1]) >= outlier_limit
+                and abs(afgeknipt_y[i] - afgeknipt_y[i + 1]) >= outlier_limit
+            ):
+                keep_mask[i] = False
+
+        afgeknipt_y = afgeknipt_y[keep_mask]
+        afgeknipt_frame = afgeknipt_frame[keep_mask]
+
+    if len(afgeknipt_y) < 5:
+        print(f"Warning: too few points left after cleaning in {filename}.")
+        return np.nan
+
     smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
 
-
-
     for i in range(2, len(smoothed) - 2):
-        if smoothed[i] < drop_height/2:
-            if (smoothed[i - 2] >= smoothed[i - 1] >= smoothed[i] <= smoothed[i + 1] <= smoothed[i + 2]) and abs(smoothed[i]-smoothed[i-1]) < 20:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
-
+        if smoothed[i] < drop_height / 2:
+            if smoothed[i - 2] >= smoothed[i - 1] >= smoothed[i] <= smoothed[i + 1] <= smoothed[i + 2]:
                 if laagtepunt_1 == 0:
-                    laagtepunt_1 = i 
+                    laagtepunt_1 = i
                 else:
-                    laagtepunt_2 = i 
+                    laagtepunt_2 = i
                     break
+
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(smoothed) - 1
-        print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")        
-    
+        print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
+
     y = [0, drop_height]
     x1 = [afgeknipt_frame[laagtepunt_1 - 1], afgeknipt_frame[laagtepunt_1 - 1]]
     x2 = [afgeknipt_frame[laagtepunt_2 - 1], afgeknipt_frame[laagtepunt_2 - 1]]
@@ -274,14 +313,13 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
     if Find_Plot:
         fig, ax = plt.subplots(1, 3, figsize=(18, 5))
-        
+
         print(f'{variable_type} = {variable_value}')
         print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
         print(f'The ball is released at y = {drop_height} pixels.')
         print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
 
-        # Grafiek 1
-        ax[0].errorbar(frames, y_points, yerr=y_err, fmt = 'o', markersize=1)
+        ax[0].errorbar(frames, y_points, yerr=y_err, fmt='o', markersize=1)
         ax[0].plot(
             [delete_first_elements - 200, delete_first_elements + 200],
             [drop_height, drop_height],
@@ -296,22 +334,14 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         ax[0].set_ylabel('Height [pixels]')
         ax[0].set_title('Beginning Data')
 
-        # Grafiek 2
-        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err, fmt = 'o', markersize=1)
+        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err, fmt='o', markersize=1)
         ax[1].plot(x1, y, 'r--')
         ax[1].plot(x2, y, 'r--')
         ax[1].set_xlabel('Time (frames)')
         ax[1].set_ylabel('Height (pixels)')
         ax[1].set_title('Data from moment of release')
 
-        # Grafiek 3
-        ax[2].errorbar(
-            frame_bounce,
-            y_bounce,
-            yerr=y_err,
-            markersize=2,
-            fmt='o'
-        )
+        ax[2].errorbar(frame_bounce, y_bounce, yerr=y_err, markersize=2, fmt='o')
         ax[2].set_xlabel('Time (frames)')
         ax[2].set_ylabel('Height (pixels)')
         ax[2].set_title('Isolated first Bounce')
@@ -320,10 +350,11 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         plt.tight_layout()
         plt.show()
 
-        bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report)
-        COR = np.sqrt(bounce_height/drop_height)
+    bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report) - laagtepunt_1
+    drop_height = drop_height - laagtepunt_1
+    COR = np.sqrt(bounce_height / drop_height)
 
-        return COR
+    return COR
 
 
 
