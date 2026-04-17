@@ -1,3 +1,5 @@
+from fileinput import filename
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -82,9 +84,11 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
     y_points = []
     frame_numbers = []
 
-    threshold_value = 90
-    min_area = 40
-    max_area = 100
+    threshold_value = 125
+    min_area = 5
+    max_area = 120
+    min_circularity = 0.5   # raise this if you want stricter circle-like blobs
+
     frame_idx = 0
 
     while True:
@@ -96,20 +100,45 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
         gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+        
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        # Draw all thresholded contours in blue for debugging
-        cv2.drawContours(frame, contours, -1, (255, 0, 0), 1)
+        
+        overlay = frame.copy()
+        cv2.drawContours(overlay, contours, -1, (255, 0, 0), -1)   # filled blue
+        alpha = 0.8  # transparency: 0 = invisible, 1 = solid
+        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
-        small_contours = [
-            cnt for cnt in contours
-            if min_area <= cv2.contourArea(cnt) <= max_area
-        ]
+        valid_contours = []
+        contour_scores = []
+
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+
+            # First: size check
+            if not (min_area <= area <= max_area):
+                continue
+
+            perimeter = cv2.arcLength(cnt, True)
+            if perimeter == 0:
+                continue
+
+            # Second: circularity check
+            circularity = 4 * np.pi * area / (perimeter ** 2)
+
+            if circularity >= min_circularity:
+                valid_contours.append(cnt)
+                contour_scores.append(circularity)
+
+        # Blue transparent fill for ONLY the contours that pass the tracking filter
+
 
         frame_numbers.append(frame_idx)
 
-        if small_contours:
-            cnt = max(small_contours, key=cv2.contourArea)
+        if valid_contours:
+            # Pick the most circular contour, not the biggest one
+            best_idx = np.argmax(contour_scores)
+            cnt = valid_contours[best_idx]
 
             M = cv2.moments(cnt)
             if M["m00"] != 0:
@@ -119,6 +148,7 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
                 x_points.append(cx)
                 y_points.append(cy)
 
+                # Green outline of the actually selected contour
                 cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
                 cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
             else:
@@ -167,13 +197,12 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
 # Made as a more general version to calculate any type of COR.  
 def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
     # tweak these
-
     leniency = 5
     y_err = 1
 
     # maybe tweak these for better results
     sigma = 2
-    
+
     # dont tweak these
 
     delete_first_elements = 1
@@ -181,45 +210,64 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     laagtepunt_2 = 0
 
     file_path = inputfolder / f"{filename}.csv"
-    data_current =  pd.read_csv(file_path)
+    data_current = pd.read_csv(file_path)
 
-    y_points = data_current.iloc[:, 1] 
-    frames = data_current.iloc[:, 0]
+    y_points = data_current.iloc[:, 1].to_numpy(dtype=float).copy()
+    frames = data_current.iloc[:, 0].to_numpy(dtype=float).copy()
 
-    nan_mask = np.isnan(y_points)
-    not_nan = ~nan_mask
-    y_points[nan_mask] = np.interp(np.flatnonzero(nan_mask),np.flatnonzero(not_nan),y_points[not_nan]) # Linearly interpolates the NaN values 
+    # Save where values were originally NaN
+    original_nan_mask = np.isnan(y_points)
+    original_valid_mask = ~original_nan_mask
 
-    
+    # Interpolate NaNs
+    y_points[original_nan_mask] = np.interp(
+        np.flatnonzero(original_nan_mask),
+        np.flatnonzero(original_valid_mask),
+        y_points[original_valid_mask]
+    )
+
     while abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) < leniency:
-            delete_first_elements += 1
+        delete_first_elements += 1
 
-    delete_first_elements -= 30 # rewind 30 frames, to before the ball fell.
+    delete_first_elements -= 30  # rewind 30 frames, to before the ball fell.
     drop_height = y_points[delete_first_elements]
-    
-    afgeknipt_y = y_points[delete_first_elements:].to_numpy(dtype=float)
-    afgeknipt_frame = frames[delete_first_elements:].to_numpy(dtype=float)
 
-    mask = ~np.isnan(afgeknipt_y)
-    afgeknipt_y = afgeknipt_y[mask]
-    afgeknipt_frame = afgeknipt_frame[mask]
+    afgeknipt_y = y_points[delete_first_elements:].copy()
+    afgeknipt_frame = frames[delete_first_elements:].copy()
+
+    # Also crop the ORIGINAL valid-mask in the same way
+    afgeknipt_original_valid = original_valid_mask[delete_first_elements:]
+
+    # Keep only up to the last originally valid datapoint
+    last_valid_idx = np.flatnonzero(afgeknipt_original_valid)[-1]
+    afgeknipt_y = afgeknipt_y[:last_valid_idx]
+    afgeknipt_frame = afgeknipt_frame[:last_valid_idx]
+    afgeknipt_original_valid = afgeknipt_original_valid[:last_valid_idx]
+
+    # Remove points that were originally NaN inside the cropped array
+    afgeknipt_y = afgeknipt_y[afgeknipt_original_valid]
+    afgeknipt_frame = afgeknipt_frame[afgeknipt_original_valid]
 
     smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
 
 
 
-    for i in range(len(smoothed) - 1):
-        if smoothed[i] < smoothed[i + 1] and smoothed[i] < smoothed[i-1]:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
-            if laagtepunt_1 == 0:
-                laagtepunt_1 = i + 1
-            else:
-                laagtepunt_2 = i - 2
-                break
-        
+    for i in range(2, len(smoothed) - 2):
+        if smoothed[i] < drop_height/2:
+            if (smoothed[i - 2] >= smoothed[i - 1] >= smoothed[i] <= smoothed[i + 1] <= smoothed[i + 2]) and abs(smoothed[i]-smoothed[i-1]) < 20:      # van deze data de eerste twee minimums vinden en het frame hiervan onthouden
+
+                if laagtepunt_1 == 0:
+                    laagtepunt_1 = i 
+                else:
+                    laagtepunt_2 = i 
+                    break
+    if laagtepunt_2 == 0:
+        laagtepunt_2 = len(smoothed) - 1
+        print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")        
     
     y = [0, drop_height]
-    x1 = [laagtepunt_1 + delete_first_elements, laagtepunt_1 + delete_first_elements]
-    x2 = [laagtepunt_2 + delete_first_elements, laagtepunt_2 + delete_first_elements]
+    x1 = [afgeknipt_frame[laagtepunt_1 - 1], afgeknipt_frame[laagtepunt_1 - 1]]
+    x2 = [afgeknipt_frame[laagtepunt_2 - 1], afgeknipt_frame[laagtepunt_2 - 1]]
 
     frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
     y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
@@ -233,7 +281,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
 
         # Grafiek 1
-        ax[0].errorbar(frames, y_points, yerr=y_err)
+        ax[0].errorbar(frames, y_points, yerr=y_err, fmt = 'o', markersize=1)
         ax[0].plot(
             [delete_first_elements - 200, delete_first_elements + 200],
             [drop_height, drop_height],
@@ -249,7 +297,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         ax[0].set_title('Beginning Data')
 
         # Grafiek 2
-        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err)
+        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err, fmt = 'o', markersize=1)
         ax[1].plot(x1, y, 'r--')
         ax[1].plot(x2, y, 'r--')
         ax[1].set_xlabel('Time (frames)')
