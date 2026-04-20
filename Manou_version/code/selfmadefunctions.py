@@ -63,8 +63,8 @@ def parabola_fit(frames, y_points, Plot, fit_report):
 
     return bounce_height
 
-def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv):
-    input_path = str(video_inputfolder / filename)
+def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv):
+    input_path = video_inputfolder / filename
 
     cap = cv2.VideoCapture(input_path)
 
@@ -84,7 +84,7 @@ def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filenam
     y_points = []
     frame_numbers = []
 
-    threshold_value = 125
+    threshold_value = treshold
     min_area = 5
     max_area = 120
     min_circularity = 0.5   # raise this if you want stricter circle-like blobs
