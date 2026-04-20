@@ -562,3 +562,6 @@ def calculate_COR_Vacuum(networkfolder, filename, value):
     COR = np.sqrt(bounce_height/drop_height)
     COR_err = 0 # not actual error, but couldnt calculate one.
     return COR, COR_err
+
+
+print("Selfmadefuntions imported/reloaded")
