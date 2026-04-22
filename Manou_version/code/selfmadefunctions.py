@@ -304,11 +304,14 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                     
 
 >>>>>>> parent of 871a961 (tracking)
 =======
+=======
+>>>>>>> parent of 871a961 (tracking)
                     
 
 >>>>>>> parent of 871a961 (tracking)
