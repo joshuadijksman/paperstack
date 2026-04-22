@@ -197,7 +197,6 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
 
     cv2.destroyAllWindows()
 
-# Made as a more general version to calculate any type of COR.  
 def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
     # tweak these
     leniency = 5
@@ -219,11 +218,27 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     y_points = data_current.iloc[:, 1].to_numpy(dtype=float).copy()
     frames = data_current.iloc[:, 0].to_numpy(dtype=float).copy()
 
-    # Save where values were originally NaN
+    # ---- 0) First turn outliers into NaN ----
+    if len(y_points) >= 3:
+        extra_outlier_mask = np.zeros(len(y_points), dtype=bool)
+
+        for i in range(1, len(y_points) - 1):
+            if np.isnan(y_points[i - 1]) or np.isnan(y_points[i]) or np.isnan(y_points[i + 1]):
+                continue
+
+            if (
+                abs(y_points[i] - y_points[i - 1]) >= outlier_limit
+                and abs(y_points[i] - y_points[i + 1]) >= outlier_limit
+            ):
+                extra_outlier_mask[i] = True
+
+        y_points[extra_outlier_mask] = np.nan
+
+    # Save where values were originally NaN (including outliers turned into NaN)
     original_nan_mask = np.isnan(y_points)
     original_valid_mask = ~original_nan_mask
 
-    # ---- 1) If there is a run of 30 original NaNs, delete everything from there on ----
+    # ---- 1) If there is a run of original NaNs, delete everything from there on ----
     nan_int = original_nan_mask.astype(int)
     kernel = np.ones(nan_run_limit, dtype=int)
     run_sums = np.convolve(nan_int, kernel, mode="valid")
@@ -273,20 +288,6 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     # Remove points that were originally NaN inside the cropped array
     afgeknipt_y = afgeknipt_y[afgeknipt_original_valid]
     afgeknipt_frame = afgeknipt_frame[afgeknipt_original_valid]
-
-    # ---- 2) Remove points that are 80 pixels or more away from their neighbors ----
-    if len(afgeknipt_y) >= 3:
-        keep_mask = np.ones(len(afgeknipt_y), dtype=bool)
-
-        for i in range(1, len(afgeknipt_y) - 1):
-            if (
-                abs(afgeknipt_y[i] - afgeknipt_y[i - 1]) >= outlier_limit
-                and abs(afgeknipt_y[i] - afgeknipt_y[i + 1]) >= outlier_limit
-            ):
-                keep_mask[i] = False
-
-        afgeknipt_y = afgeknipt_y[keep_mask]
-        afgeknipt_frame = afgeknipt_frame[keep_mask]
 
     if len(afgeknipt_y) < 5:
         print(f"Warning: too few points left after cleaning in {filename}.")
@@ -358,7 +359,6 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     COR = np.sqrt(bounce_height / drop_height)
 
     return COR
-
 
 
 
