@@ -292,18 +292,21 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         print(f"Warning: too few points left after cleaning in {filename}.")
         return np.nan
 
-    for i in range(3, len(afgeknipt_y) - 3):
+
+    for i in range(2, len(afgeknipt_y) - 2):
         if afgeknipt_y[i] < drop_height / 2:
-            if laagtepunt_1 == 0:
-                if afgeknipt_y[i - 3] >= afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1] < afgeknipt_y[i + 2] < afgeknipt_y[i + 3]:
+            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] <= afgeknipt_y[i + 1] <= afgeknipt_y[i + 2]:
+                if laagtepunt_1 == 0:
                     laagtepunt_1 = i
-            else:
-                if afgeknipt_y[i - 3] > afgeknipt_y[i - 2] > afgeknipt_y[i - 1] > afgeknipt_y[i] <= afgeknipt_y[i + 1] <= afgeknipt_y[i + 2] <= afgeknipt_y[i + 3]:
-                    laagtepunt_2 = i
+                else:
+                    if i - laagtepunt_1 > 5:
+                        laagtepunt_2 = i
+                        break
+
                     
 
     if laagtepunt_2 == 0:
-        laagtepunt_2 = len(smoothed) - 1
+        laagtepunt_2 = len(afgeknipt_y) - 1
         print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
 
     y = [0, drop_height]
@@ -319,7 +322,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         print(f'{variable_type} = {variable_value}')
         print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
         print(f'The ball is released at y = {drop_height} pixels.')
-        print(f'The minima are located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
+        print(f'The minima are located at {laagtepunt_1 + delete_first_elements} frames and {laagtepunt_2 + delete_first_elements} frames.')
 
         ax[0].errorbar(frames, y_points, yerr=y_err, fmt='o', markersize=1)
         ax[0].plot(
