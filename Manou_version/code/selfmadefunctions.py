@@ -63,10 +63,10 @@ def parabola_fit(frames, y_points, Plot, fit_report):
 
     return bounce_height
 
-def track_video_ball(video_inputfolder, video_outputfolder, csv_outputfolder, filename, 
-                     threshold, show, save_video, save_csv, BOTTOM_CROP):
+def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv, BOTTOM_CROP):
     input_path = video_inputfolder / filename
-    cap = cv2.VideoCapture(str(input_path))
+
+    cap = cv2.VideoCapture(input_path)
 
     if save_video:
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -74,20 +74,21 @@ def track_video_ball(video_inputfolder, video_outputfolder, csv_outputfolder, fi
             fps = 30
 
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) - BOTTOM_CROP
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         output_path = str(video_outputfolder / f"{Path(filename).stem}_tracked.avi")
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
 
-    frame_numbers = []
     x_points = []
     y_points = []
+    frame_numbers = []
 
-    # Tune these
-    min_area = 100
-    max_area = 5000
-    min_circularity = 0.5
+
+    threshold_value = treshold
+    min_area = 5
+    max_area = 120
+    min_circularity = 0.5   # raise this if you want stricter circle-like blobs
 
     frame_idx = 0
 
@@ -96,26 +97,28 @@ def track_video_ball(video_inputfolder, video_outputfolder, csv_outputfolder, fi
         if not ret:
             break
 
-        frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = gray[:gray.shape[0] - BOTTOM_CROP, :]
         gray = cv2.GaussianBlur(gray, (7, 7), 0)
+        frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
 
-        # If the ball is brighter than the black background, use THRESH_BINARY
-        # If it turns out the ball is darker, change this to THRESH_BINARY_INV
-        _, mask = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
-
-        # Clean up mask a bit
-        kernel = np.ones((3, 3), np.uint8)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+        
 
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        overlay = frame.copy()
+        cv2.drawContours(overlay, contours, -1, (255, 0, 0), -1)   # filled blue
+        alpha = 0.8  # transparency: 0 = invisible, 1 = solid
+        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
-        best_cnt = None
-        best_score = -np.inf
+        valid_contours = []
+        contour_scores = []
 
         for cnt in contours:
             area = cv2.contourArea(cnt)
+
+            # First: size check
             if not (min_area <= area <= max_area):
                 continue
 
@@ -123,27 +126,37 @@ def track_video_ball(video_inputfolder, video_outputfolder, csv_outputfolder, fi
             if perimeter == 0:
                 continue
 
+            # Second: circularity check
             circularity = 4 * np.pi * area / (perimeter ** 2)
 
-            # Prefer contours that are reasonably circular and reasonably large
             if circularity >= min_circularity:
-                score = circularity * area
-                if score > best_score:
-                    best_score = score
-                    best_cnt = cnt
+                valid_contours.append(cnt)
+                contour_scores.append(circularity)
+
+        # Blue transparent fill for ONLY the contours that pass the tracking filter
+
 
         frame_numbers.append(frame_idx)
 
-        if best_cnt is not None:
-            (cx, cy), radius = cv2.minEnclosingCircle(best_cnt)
+        if valid_contours:
+            # Pick the most circular contour, not the biggest one
+            best_idx = np.argmax(contour_scores)
+            cnt = valid_contours[best_idx]
 
-            x_points.append(cx)
-            y_points.append(cy)
+            M = cv2.moments(cnt)
+            if M["m00"] != 0:
+                cx = M["m10"] / M["m00"]
+                cy = M["m01"] / M["m00"]
 
-            # Draw chosen contour
-            cv2.drawContours(frame, [best_cnt], -1, (0, 255, 0), 2)
-            cv2.circle(frame, (int(cx), int(cy)), int(radius), (255, 0, 0), 2)
-            cv2.circle(frame, (int(cx), int(cy)), 4, (0, 0, 255), -1)
+                x_points.append(cx)
+                y_points.append(cy)
+
+                # Green outline of the actually selected contour
+                cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
+                cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+            else:
+                x_points.append(np.nan)
+                y_points.append(np.nan)
         else:
             x_points.append(np.nan)
             y_points.append(np.nan)
@@ -174,8 +187,8 @@ def track_video_ball(video_inputfolder, video_outputfolder, csv_outputfolder, fi
             new_points.append(new_y)
 
         cleaned_file = pd.DataFrame({
-            "Frame": frame_numbers,
-            "Y": new_points
+            'Frame': frame_numbers,
+            'Y': new_points
         })
 
         csv_path = csv_outputfolder / f"{Path(filename).stem}_clean.csv"
@@ -289,6 +302,11 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
                         laagtepunt_2 = i
                         break
 
+<<<<<<< HEAD
+=======
+                    
+
+>>>>>>> parent of 871a961 (tracking)
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(smoothed) - 1
         print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
