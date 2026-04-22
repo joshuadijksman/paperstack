@@ -63,7 +63,7 @@ def parabola_fit(frames, y_points, Plot, fit_report):
 
     return bounce_height
 
-def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv):
+def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv, BOTTOM_CROP):
     input_path = video_inputfolder / filename
 
     cap = cv2.VideoCapture(input_path)
@@ -84,6 +84,7 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
     y_points = []
     frame_numbers = []
 
+
     threshold_value = treshold
     min_area = 5
     max_area = 120
@@ -97,7 +98,9 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
             break
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = gray[:gray.shape[0] - BOTTOM_CROP, :]
         gray = cv2.GaussianBlur(gray, (7, 7), 0)
+        frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
         
@@ -203,7 +206,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     # maybe tweak these for better results
     sigma = 2
     nan_run_limit = 20
-    outlier_limit = 50
+    outlier_limit = 80
 
     # dont tweak these
     delete_first_elements = 1
@@ -271,7 +274,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     afgeknipt_y = afgeknipt_y[afgeknipt_original_valid]
     afgeknipt_frame = afgeknipt_frame[afgeknipt_original_valid]
 
-    # ---- 2) Remove points that are 30 pixels or more away from their neighbors ----
+    # ---- 2) Remove points that are 80 pixels or more away from their neighbors ----
     if len(afgeknipt_y) >= 3:
         keep_mask = np.ones(len(afgeknipt_y), dtype=bool)
 
@@ -291,9 +294,9 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
     smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
 
-    for i in range(2, len(smoothed) - 2):
-        if smoothed[i] < drop_height / 2:
-            if smoothed[i - 2] >= smoothed[i - 1] >= smoothed[i] <= smoothed[i + 1] <= smoothed[i + 2]:
+    for i in range(2, len(afgeknipt_y) - 2):
+        if afgeknipt_y[i] < drop_height / 2:
+            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1] < afgeknipt_y[i + 2]:
                 if laagtepunt_1 == 0:
                     laagtepunt_1 = i
                 else:
