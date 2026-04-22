@@ -292,23 +292,24 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         print(f"Warning: too few points left after cleaning in {filename}.")
         return np.nan
 
-    for i in range(3, len(afgeknipt_y) - 3):
+
+    for i in range(2, len(afgeknipt_y) - 2):
         if afgeknipt_y[i] < drop_height / 2:
-            if laagtepunt_1 == 0:
-                if afgeknipt_y[i - 3] >= afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1] < afgeknipt_y[i + 2] < afgeknipt_y[i + 3]:
-                    laagtepunt_1 = i
+            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] <= afgeknipt_y[i + 1] <= afgeknipt_y[i + 2]:
+                if laagtepunt_1 == 0:
+                        laagtepunt_1 = i
                 else:
                     if i - laagtepunt_1 > 5:
                         laagtepunt_2 = i
                         break
 
     if laagtepunt_2 == 0:
-        laagtepunt_2 = len(smoothed) - 1
+        laagtepunt_2 = len(afgeknipt_y) - 1
         print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
 
     y = [0, drop_height]
-    x1 = [afgeknipt_frame[laagtepunt_1 - 1], afgeknipt_frame[laagtepunt_1 - 1]]
-    x2 = [afgeknipt_frame[laagtepunt_2 - 1], afgeknipt_frame[laagtepunt_2 - 1]]
+    x1 = [afgeknipt_frame[laagtepunt_1], afgeknipt_frame[laagtepunt_1]]
+    x2 = [afgeknipt_frame[laagtepunt_2], afgeknipt_frame[laagtepunt_2]]
 
     frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
     y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
