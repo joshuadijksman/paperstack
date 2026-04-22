@@ -203,7 +203,6 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     y_err = 1
 
     # maybe tweak these for better results
-    sigma = 2
     nan_run_limit = 20
     outlier_limit = 80
 
@@ -293,16 +292,15 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         print(f"Warning: too few points left after cleaning in {filename}.")
         return np.nan
 
-    smoothed = gaussian_filter1d(afgeknipt_y, sigma=sigma)
-
-    for i in range(2, len(afgeknipt_y) - 2):
+    for i in range(3, len(afgeknipt_y) - 3):
         if afgeknipt_y[i] < drop_height / 2:
-            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1] < afgeknipt_y[i + 2]:
-                if laagtepunt_1 == 0:
+            if laagtepunt_1 == 0:
+                if afgeknipt_y[i - 3] >= afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1] < afgeknipt_y[i + 2] < afgeknipt_y[i + 3]:
                     laagtepunt_1 = i
-                else:
+            else:
+                if afgeknipt_y[i - 3] > afgeknipt_y[i - 2] > afgeknipt_y[i - 1] > afgeknipt_y[i] <= afgeknipt_y[i + 1] <= afgeknipt_y[i + 2] <= afgeknipt_y[i + 3]:
                     laagtepunt_2 = i
-                    break
+                    
 
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(smoothed) - 1
