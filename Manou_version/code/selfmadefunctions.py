@@ -284,19 +284,10 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
             if laagtepunt_1 == 0:
                 if afgeknipt_y[i - 3] >= afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1] < afgeknipt_y[i + 2] < afgeknipt_y[i + 3]:
                     laagtepunt_1 = i
-<<<<<<< HEAD
                 else:
                     if i - laagtepunt_1 > 5:
                         laagtepunt_2 = i
                         break
-
-
-=======
-            else:
-                if afgeknipt_y[i - 3] > afgeknipt_y[i - 2] > afgeknipt_y[i - 1] > afgeknipt_y[i] <= afgeknipt_y[i + 1] <= afgeknipt_y[i + 2] <= afgeknipt_y[i + 3]:
-                    laagtepunt_2 = i
-                    
->>>>>>> parent of 7729ac7 (working on tracking)
 
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(smoothed) - 1
