@@ -302,19 +302,6 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
                         laagtepunt_2 = i
                         break
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-                    
-
->>>>>>> parent of 871a961 (tracking)
-=======
-=======
->>>>>>> parent of 871a961 (tracking)
-                    
-
->>>>>>> parent of 871a961 (tracking)
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(smoothed) - 1
         print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
