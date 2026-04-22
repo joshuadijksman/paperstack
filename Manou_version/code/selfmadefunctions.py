@@ -63,7 +63,7 @@ def parabola_fit(frames, y_points, Plot, fit_report):
 
     return bounce_height
 
-def track_video_ball(video_inputfolder, video_outputfolder, csv_outputfolder, filename, 
+def track_video(video_inputfolder, video_outputfolder, csv_outputfolder, filename, 
                      threshold, show, save_video, save_csv, BOTTOM_CROP):
     input_path = video_inputfolder / filename
     cap = cv2.VideoCapture(str(input_path))
