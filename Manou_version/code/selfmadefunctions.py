@@ -216,7 +216,6 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
     y_points = data_current.iloc[:, 1].to_numpy(dtype=float).copy()
     frames = data_current.iloc[:, 0].to_numpy(dtype=float).copy()
-
     # ---- 0) First turn outliers into NaN ----
     if len(y_points) >= 3:
         extra_outlier_mask = np.zeros(len(y_points), dtype=bool)
@@ -324,12 +323,12 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
         ax[0].errorbar(frames, y_points, yerr=y_err, fmt='o', markersize=1)
         ax[0].plot(
-            [delete_first_elements - 200, delete_first_elements + 200],
+            [delete_first_elements + frames[0] - 20, delete_first_elements + frames[0] + 20],
             [drop_height, drop_height],
             'b--'
         )
         ax[0].plot(
-            [delete_first_elements, delete_first_elements],
+            [delete_first_elements + frames[0], delete_first_elements + frames[0]],
             [drop_height + 100, 0],
             'r--'
         )
