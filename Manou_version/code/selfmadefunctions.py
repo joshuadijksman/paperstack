@@ -353,14 +353,35 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         plt.tight_layout()
         plt.show()
 
-    bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report) - laagtepunt_1
-    drop_height = drop_height - laagtepunt_1
+    bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report) - afgeknipt_y[laagtepunt_1]
+    drop_height = drop_height - afgeknipt_y[laagtepunt_1]
     COR = np.sqrt(bounce_height / drop_height)
 
     return COR
 
 
 
+
+def get_avg_err(x, y):
+    x =  np.array(x, dtype = float)
+    y =  np.array(y, dtype = float)
+
+    mask = ~ np.isnan(y)
+
+    y_clean = y[mask]
+    x_clean = x[mask]
+
+    x_unique = np.unique(x)
+
+    avg_y = []
+    err_y = []
+
+    for val in x_unique:
+        y_group = y_clean[x_clean == val]
+        avg_y.append(np.mean(y_group))
+        err_y.append(np.std(y_group, ddof = 1)/len(y_group))
+
+    return x_clean, y_clean, err_y, avg_y, x_unique
 ############################## Specific functions for specific files ###############################3
 
 def databewerken(networkfolder, filename, thickness, Plot):
