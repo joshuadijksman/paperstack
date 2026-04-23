@@ -86,9 +86,9 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
 
 
     threshold_value = treshold
-    min_area = 40
-    max_area = 300
-    min_circularity = 0.6   # raise this if you want stricter circle-like blobs
+    min_area = 5
+    max_area = 100
+    min_circularity = 0.4   # raise this if you want stricter circle-like blobs
 
     frame_idx = 0
 
