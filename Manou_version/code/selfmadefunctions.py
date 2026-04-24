@@ -65,7 +65,7 @@ def parabola_fit(frames, y_points, Plot, fit_report):
 
 def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolder, filename, show, save_video, save_csv, BOTTOM_CROP):
     input_path = video_inputfolder / filename
-
+    print(input_path)
     cap = cv2.VideoCapture(input_path)
 
     if save_video:
@@ -218,8 +218,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
 
     threshold_value = treshold
     min_area = 5
-    max_area = 500
-    min_circularity = 0.4
+    max_area = 700
     alpha = 0.8
 
     prev_cx = None
@@ -237,7 +236,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = gray[:gray.shape[0] - BOTTOM_CROP, :]
         frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
-        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+        gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -254,8 +253,6 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
                 continue
 
             circularity = 4 * np.pi * area / (perimeter ** 2)
-            if circularity < min_circularity:
-                continue
 
             M = cv2.moments(cnt)
             if M["m00"] == 0:
@@ -266,7 +263,9 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
 
             candidates.append((cnt, cx, cy, area, circularity))
 
+
         overlay = frame.copy()
+        cv2.drawContours(overlay, contours, -1, (0, 255, 255, 1))
         cv2.drawContours(overlay, [c[0] for c in candidates], -1, (255, 0, 0), -1)
         frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
 
@@ -309,6 +308,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
         if show:
             cv2.imshow("tracking", frame)
             cv2.imshow("mask", mask)
+            cv2.imshow("debug", overlay)
             if cv2.waitKey(30) == 27:
                 break
 
