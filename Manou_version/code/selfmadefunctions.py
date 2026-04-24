@@ -217,7 +217,7 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
     frame_numbers = []
 
     threshold_value = threshold
-    min_area = 5
+    min_area = 20
     max_area = 700
 
     prev_cx = None
@@ -237,7 +237,7 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
         candidates = []
 
@@ -283,7 +283,7 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
                     area_norm = area_diff / max(prev_area, 1)
                     circ_norm = circ_diff / max(prev_circularity, 0.01)
 
-                    return 2.0 * dist_norm + 1.0 * area_norm + 1.0 * circ_norm
+                    return 2.0 * dist_norm + 4.0 * area_norm + 1.0 * circ_norm
 
                 cnt, cx, cy, area, circularity = min(candidates, key=candidate_score)
 
