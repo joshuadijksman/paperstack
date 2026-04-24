@@ -197,8 +197,6 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
 
     cv2.destroyAllWindows()
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfolder,
                   filename, show, save_video, save_csv, BOTTOM_CROP):
     input_path = video_inputfolder / filename
@@ -331,10 +329,6 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
 
     cv2.destroyAllWindows()
 
-=======
->>>>>>> parent of 6472d89 (Added new video tracking software)
-=======
->>>>>>> parent of 6472d89 (Added new video tracking software)
 def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
     # tweak these
     leniency = 5
