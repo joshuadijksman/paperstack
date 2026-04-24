@@ -305,6 +305,10 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(afgeknipt_y) - 1
         print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
+    
+    if laagtepunt_2 - laagtepunt_1 < 3: #Sometime happens when the frame is too short
+        laagtepunt_1 -= 3
+        print(f"Mask {filename}, tracking went wrong.")
 
     y = [0, drop_height]
     x1 = [afgeknipt_frame[laagtepunt_1], afgeknipt_frame[laagtepunt_1]]
@@ -312,6 +316,9 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
     frame_bounce = afgeknipt_frame[laagtepunt_1:laagtepunt_2]
     y_bounce = afgeknipt_y[laagtepunt_1:laagtepunt_2]
+
+
+
 
     if Find_Plot:
         fig, ax = plt.subplots(1, 3, figsize=(18, 5))
