@@ -197,6 +197,151 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
 
     cv2.destroyAllWindows()
 
+def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfolder,
+                  filename, show, save_video, save_csv, BOTTOM_CROP):
+    input_path = video_inputfolder / filename
+    cap = cv2.VideoCapture(input_path)
+
+    if save_video:
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps <= 0:
+            fps = 30
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) - BOTTOM_CROP
+        output_path = str(video_outputfolder / f"{Path(filename).stem}_tracked.avi")
+        fourcc = cv2.VideoWriter_fourcc(*"XVID")
+        out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
+
+    x_points = []
+    y_points = []
+    frame_numbers = []
+
+    threshold_value = treshold
+    min_area = 5
+    max_area = 100
+    min_circularity = 0.4
+    alpha = 0.8
+
+    prev_cx = None
+    prev_cy = None
+    prev_area = None
+    prev_circularity = None
+    has_locked_once = False
+    frame_idx = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = gray[:gray.shape[0] - BOTTOM_CROP, :]
+        frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
+        gray = cv2.GaussianBlur(gray, (7, 7), 0)
+
+        _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        candidates = []
+
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if not (min_area <= area <= max_area):
+                continue
+
+            perimeter = cv2.arcLength(cnt, True)
+            if perimeter == 0:
+                continue
+
+            circularity = 4 * np.pi * area / (perimeter ** 2)
+            if circularity < min_circularity:
+                continue
+
+            M = cv2.moments(cnt)
+            if M["m00"] == 0:
+                continue
+
+            cx = M["m10"] / M["m00"]
+            cy = M["m01"] / M["m00"]
+
+            candidates.append((cnt, cx, cy, area, circularity))
+
+        overlay = frame.copy()
+        cv2.drawContours(overlay, [c[0] for c in candidates], -1, (255, 0, 0), -1)
+        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
+
+        frame_numbers.append(frame_idx)
+
+        if candidates:
+            if not has_locked_once:
+                cnt, cx, cy, area, circularity = min(candidates, key=lambda c: c[2])
+                has_locked_once = True
+            else:
+                def candidate_score(c):
+                    _, cx, cy, area, circularity = c
+
+                    dist = np.hypot(cx - prev_cx, cy - prev_cy)
+                    area_diff = abs(area - prev_area)
+                    circ_diff = abs(circularity - prev_circularity)
+
+                    dist_norm = dist / 20
+                    area_norm = area_diff / max(prev_area, 1)
+                    circ_norm = circ_diff / max(prev_circularity, 0.01)
+
+                    return dist_norm + area_norm + circ_norm
+
+                cnt, cx, cy, area, circularity = min(candidates, key=candidate_score)
+
+            x_points.append(cx)
+            y_points.append(cy)
+
+            prev_cx = cx
+            prev_cy = cy
+            prev_area = area
+            prev_circularity = circularity
+
+            cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
+            cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+        else:
+            x_points.append(np.nan)
+            y_points.append(np.nan)
+
+        if show:
+            cv2.imshow("tracking", frame)
+            cv2.imshow("mask", mask)
+            if cv2.waitKey(30) == 27:
+                break
+
+        if save_video:
+            out.write(frame)
+
+        frame_idx += 1
+
+    cap.release()
+
+    if save_video:
+        out.release()
+        print("Saved video to:", output_path)
+
+    if save_csv:
+        lowest_y = np.nanmax(y_points)
+        new_points = []
+
+        for y in y_points:
+            new_y = lowest_y - y if not np.isnan(y) else np.nan
+            new_points.append(new_y)
+
+        cleaned_file = pd.DataFrame({
+            'Frame': frame_numbers,
+            'Y': new_points
+        })
+
+        csv_path = csv_outputfolder / f"{Path(filename).stem}_clean.csv"
+        cleaned_file.to_csv(csv_path, index=False)
+        print(f"Saved as {csv_path}")
+
+    cv2.destroyAllWindows()
+
 def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
     # tweak these
     leniency = 5
