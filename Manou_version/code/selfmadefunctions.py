@@ -197,7 +197,7 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
 
     cv2.destroyAllWindows()
 
-def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfolder,
+def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfolder,
                   filename, show, save_video, save_csv, BOTTOM_CROP):
     input_path = video_inputfolder / filename
     cap = cv2.VideoCapture(input_path)
@@ -216,10 +216,9 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
     y_points = []
     frame_numbers = []
 
-    threshold_value = treshold
+    threshold_value = threshold
     min_area = 5
     max_area = 700
-    alpha = 0.8
 
     prev_cx = None
     prev_cy = None
@@ -233,9 +232,8 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
         if not ret:
             break
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = gray[:gray.shape[0] - BOTTOM_CROP, :]
         frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
@@ -263,13 +261,11 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
 
             candidates.append((cnt, cx, cy, area, circularity))
 
-
-        overlay = frame.copy()
-        cv2.drawContours(overlay, contours, -1, (0, 255, 255, 1))
-        cv2.drawContours(overlay, [c[0] for c in candidates], -1, (255, 0, 0), -1)
-        frame = cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0)
-
         frame_numbers.append(frame_idx)
+
+        chosen_cnt = None
+        chosen_cx = np.nan
+        chosen_cy = np.nan
 
         if candidates:
             if not has_locked_once:
@@ -287,7 +283,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
                     area_norm = area_diff / max(prev_area, 1)
                     circ_norm = circ_diff / max(prev_circularity, 0.01)
 
-                    return dist_norm + area_norm + circ_norm
+                    return 2.0 * dist_norm + 1.0 * area_norm + 1.0 * circ_norm
 
                 cnt, cx, cy, area, circularity = min(candidates, key=candidate_score)
 
@@ -299,21 +295,35 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
             prev_area = area
             prev_circularity = circularity
 
-            cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
-            cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
+            chosen_cnt = cnt
+            chosen_cx = cx
+            chosen_cy = cy
         else:
             x_points.append(np.nan)
             y_points.append(np.nan)
 
+        tracking_view = frame.copy()
+        if chosen_cnt is not None:
+            cv2.circle(tracking_view, (int(chosen_cx), int(chosen_cy)), 5, (0, 0, 255), -1)
+
+        debug_view = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+
+        if chosen_cnt is not None:
+            cv2.drawContours(debug_view, [chosen_cnt], -1, (255, 0, 0), -1)
+
+        cv2.drawContours(debug_view, contours, -1, (0, 255, 255), 1)
+        if chosen_cnt is not None:
+            cv2.drawContours(debug_view, [chosen_cnt], -1, (0, 255, 255), 1)
+            cv2.circle(debug_view, (int(chosen_cx), int(chosen_cy)), 5, (0, 0, 255), -1)
+
         if show:
-            cv2.imshow("tracking", frame)
-            cv2.imshow("mask", mask)
-            cv2.imshow("debug", overlay)
+            cv2.imshow("tracking", tracking_view)
+            cv2.imshow("debug", debug_view)
             if cv2.waitKey(30) == 27:
                 break
 
         if save_video:
-            out.write(frame)
+            out.write(tracking_view)
 
         frame_idx += 1
 
