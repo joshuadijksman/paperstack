@@ -217,13 +217,15 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
     frame_numbers = []
 
     threshold_value = treshold
-    min_area = 10
-    max_area = 400
+    min_area = 5
+    max_area = 500
+    min_circularity = 0.4
     alpha = 0.8
 
     prev_cx = None
     prev_cy = None
     prev_area = None
+    prev_circularity = None
     has_locked_once = False
     frame_idx = 0
 
@@ -235,7 +237,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = gray[:gray.shape[0] - BOTTOM_CROP, :]
         frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
-        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        gray = cv2.GaussianBlur(gray, (7, 7), 0)
 
         _, mask = cv2.threshold(gray, threshold_value, 255, cv2.THRESH_BINARY)
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -247,6 +249,14 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
             if not (min_area <= area <= max_area):
                 continue
 
+            perimeter = cv2.arcLength(cnt, True)
+            if perimeter == 0:
+                continue
+
+            circularity = 4 * np.pi * area / (perimeter ** 2)
+            if circularity < min_circularity:
+                continue
+
             M = cv2.moments(cnt)
             if M["m00"] == 0:
                 continue
@@ -254,7 +264,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
             cx = M["m10"] / M["m00"]
             cy = M["m01"] / M["m00"]
 
-            candidates.append((cnt, cx, cy, area))
+            candidates.append((cnt, cx, cy, area, circularity))
 
         overlay = frame.copy()
         cv2.drawContours(overlay, [c[0] for c in candidates], -1, (255, 0, 0), -1)
@@ -264,21 +274,23 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
 
         if candidates:
             if not has_locked_once:
-                cnt, cx, cy, area = min(candidates, key=lambda c: c[2])
+                cnt, cx, cy, area, circularity = min(candidates, key=lambda c: c[2])
                 has_locked_once = True
             else:
                 def candidate_score(c):
-                    _, cx, cy, area = c
+                    _, cx, cy, area, circularity = c
 
                     dist = np.hypot(cx - prev_cx, cy - prev_cy)
                     area_diff = abs(area - prev_area)
+                    circ_diff = abs(circularity - prev_circularity)
 
-                    dist_norm = dist / 40
+                    dist_norm = dist / 20
                     area_norm = area_diff / max(prev_area, 1)
+                    circ_norm = circ_diff / max(prev_circularity, 0.01)
 
-                    return dist_norm + area_norm
+                    return dist_norm + area_norm + circ_norm
 
-                cnt, cx, cy, area = min(candidates, key=candidate_score)
+                cnt, cx, cy, area, circularity = min(candidates, key=candidate_score)
 
             x_points.append(cx)
             y_points.append(cy)
@@ -286,6 +298,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
             prev_cx = cx
             prev_cy = cy
             prev_area = area
+            prev_circularity = circularity
 
             cv2.drawContours(frame, [cnt], -1, (0, 255, 0), 2)
             cv2.circle(frame, (int(cx), int(cy)), 5, (0, 0, 255), -1)
@@ -328,6 +341,7 @@ def track_video_2(treshold, video_inputfolder, video_outputfolder, csv_outputfol
         print(f"Saved as {csv_path}")
 
     cv2.destroyAllWindows()
+
 
 def COR_calculator_general(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
     # tweak these
