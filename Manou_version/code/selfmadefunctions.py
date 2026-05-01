@@ -515,8 +515,8 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
         plt.tight_layout()
         plt.show()
 
-    bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report) - afgeknipt_y[laagtepunt_1]
-    drop_height = drop_height - afgeknipt_y[laagtepunt_1]
+    bounce_height = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report)
+    drop_height = drop_height
     COR = np.sqrt(bounce_height / drop_height)
 
     return COR
