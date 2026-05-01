@@ -486,7 +486,7 @@ def COR_calculator_general(inputfolder, variable_type, variable_value, filename,
 
         ax[0].errorbar(frames, y_points, yerr=y_err, fmt='o', markersize=1)
         ax[0].plot(
-            [delete_first_elements + frames[0] - 20, delete_first_elements + frames[0] + 200],
+            [delete_first_elements + frames[0] - 20, delete_first_elements + frames[0] + 100],
             [drop_height, drop_height],
             'b--'
         )
