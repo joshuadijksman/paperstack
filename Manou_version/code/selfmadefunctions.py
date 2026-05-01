@@ -198,7 +198,7 @@ def track_video(treshold, video_inputfolder, video_outputfolder, csv_outputfolde
     cv2.destroyAllWindows()
 
 def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfolder,
-                  filename, show, save_video, save_csv, BOTTOM_CROP):
+                  filename, show, save_video, save_csv, BOTTOM_CROP, TOP_CROP):
     input_path = video_inputfolder / filename
     cap = cv2.VideoCapture(input_path)
 
@@ -207,7 +207,7 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
         if fps <= 0:
             fps = 30
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) - BOTTOM_CROP
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)) - BOTTOM_CROP - TOP_CROP
         output_path = str(video_outputfolder / f"{Path(filename).stem}_tracked.avi")
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height), isColor=True)
@@ -218,7 +218,7 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
 
     threshold_value = threshold
     min_area = 20
-    max_area = 700
+    max_area = 300
 
     prev_cx = None
     prev_cy = None
@@ -232,7 +232,7 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
         if not ret:
             break
 
-        frame = frame[:frame.shape[0] - BOTTOM_CROP, :]
+        frame = frame[TOP_CROP : frame.shape[0] - BOTTOM_CROP, :]
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (5, 5), 0)
 
