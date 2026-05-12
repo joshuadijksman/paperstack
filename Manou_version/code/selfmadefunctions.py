@@ -21,12 +21,15 @@ def parabola_fit(frames, y_points, Plot, fit_report):
     def fit_function(t, a, t_0, b):
         return a * (t - t_0)**2 + b
 
+    b_max = max(y_points) * 1.5
+    t0_max = (max(frames)+min(frames))/2 + (max(frames) - min(frames))*2
+
     calibration_model = Model(fit_function)
     calibration_model.set_param_hint('a', max=-0.1)
-    calibration_model.set_param_hint('t_0', min=0)
-    calibration_model.set_param_hint('b', min=0)
+    calibration_model.set_param_hint('t_0', min=0, max= t0_max)
+    calibration_model.set_param_hint('b', min=0, max = b_max)
 
-    fit_result = calibration_model.fit(y_points, t=frames, a=-4.8, t_0=70, b=200, weights=1)
+    fit_result = calibration_model.fit(y_points, t=frames, a=-4.8, t_0=(min(frames) + max(frames)/2), b=(max(y_points)), weights=1)
     a = fit_result.params['a'].value
     b = fit_result.params['b'].value
     t_0 = fit_result.params['t_0'].value
@@ -325,7 +328,7 @@ def COR_calculator_2(inputfolder, variable_type, variable_value, filename, Find_
 
     for i in range(2, len(afgeknipt_y) - 2):
         if afgeknipt_y[i] < drop_height / 2:
-            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] <= afgeknipt_y[i + 1] <= afgeknipt_y[i + 2]:
+            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1]:
                 if laagtepunt_1 == 0:
                         laagtepunt_1 = i
                 else:
@@ -335,7 +338,6 @@ def COR_calculator_2(inputfolder, variable_type, variable_value, filename, Find_
 
     if laagtepunt_2 == 0:
         laagtepunt_2 = len(afgeknipt_y) - 1
-        print("Warning: only one minimum found, using last point as second minimum. This may cause errors in the COR calculation.")
     
     if laagtepunt_2 - laagtepunt_1 < 3: #Sometime happens when the frame is too short
         laagtepunt_1 -= 3
