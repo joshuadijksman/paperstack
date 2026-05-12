@@ -22,7 +22,11 @@ def parabola_fit(frames, y_points, Plot, fit_report):
         return a * (t - t_0)**2 + b
 
     calibration_model = Model(fit_function)
-    fit_result = calibration_model.fit(y_points, t=frames, a=20, t_0=70, b=200, weights=1)
+    calibration_model.set_param_hint('a', max=-0.1)
+    calibration_model.set_param_hint('t_0', min=0)
+    calibration_model.set_param_hint('b', min=0)
+
+    fit_result = calibration_model.fit(y_points, t=frames, a=-4.8, t_0=70, b=200, weights=1)
     a = fit_result.params['a'].value
     b = fit_result.params['b'].value
     t_0 = fit_result.params['t_0'].value
