@@ -22,7 +22,7 @@ def parabola_fit(frames, y_points, Plot, fit_report):
         return a * (t - t_0)**2 + b
 
     b_max = max(y_points) * 1.5
-    t0_max = (max(frames)+min(frames))/2 + (max(frames) - min(frames))*2
+    t0_max = 2 * max(frames)
 
     calibration_model = Model(fit_function)
     calibration_model.set_param_hint('a', max=-0.1)
@@ -219,7 +219,8 @@ def track_video_2(threshold, video_inputfolder, video_outputfolder, csv_outputfo
 
         cleaned_file = pd.DataFrame({
             'Frame': frame_numbers,
-            'Y': new_points
+            'Y': new_points,
+            'X': x_points
         })
 
         csv_path = csv_outputfolder / f"{Path(filename).stem}_clean.csv"
