@@ -360,7 +360,7 @@ def COR_calculator_2(inputfolder, variable_type, variable_value, filename, Find_
         print(f'{variable_type} = {variable_value}')
         print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
         print(f'The ball is released at y = {drop_height} pixels.')
-        print(f'First found minima located at {laagtepunt_1} frames and {laagtepunt_2} frames.')
+        print(f'First found minima located at {afgeknipt_frame[laagtepunt_1]} frames and {afgeknipt_frame[laagtepunt_2]} frames.')
 
         ax[0].errorbar(frames, y_points, yerr=y_err, fmt='o', markersize=1)
         ax[0].plot(
@@ -411,7 +411,7 @@ def COR_calculator_2(inputfolder, variable_type, variable_value, filename, Find_
         t_bounce_1 = (-B + np.sqrt(B**2 - 4*A*C) )/ (2*A)
         t_bounce_2 = (-B - np.sqrt(B**2 - 4*A*C) )/ (2*A)
 
-        t_bounce = min(t_bounce_1, t_bounce_2, key = lambda x: abs(x-laagtepunt_1))
+        t_bounce = min(t_bounce_1, t_bounce_2, key = lambda x: abs(x-afgeknipt_frame[laagtepunt_1]))
     y_0 = a_1*(t_bounce - t_1)**2 + start_height
 
     COR = np.sqrt((bounce_height - y_0) /(start_height - y_0))
@@ -445,7 +445,7 @@ def get_avg_err(x, y):
     for val in x_unique:
         y_group = y_clean[x_clean == val]
         avg_y.append(np.mean(y_group))
-        err_y.append(np.std(y_group, ddof = 1)/len(y_group))
+        err_y.append(np.std(y_group, ddof = 1))
 
     return x_clean, y_clean, err_y, avg_y, x_unique
 
