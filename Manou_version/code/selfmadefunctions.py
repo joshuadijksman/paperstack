@@ -445,7 +445,7 @@ def get_avg_err(x, y):
     for val in x_unique:
         y_group = y_clean[x_clean == val]
         avg_y.append(np.mean(y_group))
-        err_y.append(np.std(y_group, ddof = 1))
+        err_y.append(np.std(y_group, ddof = 1)/np.sqrt(len(y_group)))
 
     return x_clean, y_clean, err_y, avg_y, x_unique
 
