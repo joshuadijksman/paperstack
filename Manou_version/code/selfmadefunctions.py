@@ -1157,7 +1157,7 @@ def COR_calculator_3(inputfolder, variable_type, variable_value, filename, Find_
 
         t_bounce = min(t_bounce_1, t_bounce_2, key = lambda x: abs(x-afgeknipt_frame[laagtepunt_1]))
     y_0 = a_1*(t_bounce - t_1)**2 + start_height
-
+    print(a_2/a_1)
     velocity_before = 2*a_1*(t_bounce - t_1)
     velocity_after = 2*a_2*(t_bounce - t_2)
 
