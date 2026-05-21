@@ -964,3 +964,232 @@ def calculate_COR_Vacuum(networkfolder, filename, value):
 
 
 print("Selfmadefuntions imported/reloaded")
+
+
+
+
+
+
+
+
+
+
+################### Work in progress, new function ########################
+
+def COR_calculator_3(inputfolder, variable_type, variable_value, filename, Find_Plot, Fit_Plot, Fit_Report):
+    # tweak these
+    leniency = 5
+    y_err = 1
+
+    # maybe tweak these for better results
+    nan_run_limit = 25
+    outlier_limit = 80
+
+    # dont tweak these
+    delete_first_elements = 1
+    laagtepunt_1 = 0
+    laagtepunt_2 = 0
+
+    file_path = inputfolder / f"{filename}.csv"
+    data_current = pd.read_csv(file_path)
+
+    y_points = data_current.iloc[:, 1].to_numpy(dtype=float).copy()
+    frames = data_current.iloc[:, 0].to_numpy(dtype=float).copy()
+    # ---- 0) First turn outliers into NaN ----
+    if len(y_points) >= 3:
+        extra_outlier_mask = np.zeros(len(y_points), dtype=bool)
+
+        for i in range(1, len(y_points) - 1):
+            if np.isnan(y_points[i - 1]) or np.isnan(y_points[i]) or np.isnan(y_points[i + 1]):
+                continue
+
+            if (
+                abs(y_points[i] - y_points[i - 1]) >= outlier_limit
+                and abs(y_points[i] - y_points[i + 1]) >= outlier_limit
+            ):
+                extra_outlier_mask[i] = True
+
+        y_points[extra_outlier_mask] = np.nan
+
+    # Save where values were originally NaN (including outliers turned into NaN)
+    original_nan_mask = np.isnan(y_points)
+    original_valid_mask = ~original_nan_mask
+
+    # ---- 1) If there is a run of original NaNs, delete everything from there on ----
+    nan_int = original_nan_mask.astype(int)
+    kernel = np.ones(nan_run_limit, dtype=int)
+    run_sums = np.convolve(nan_int, kernel, mode="valid")
+
+    if np.any(run_sums == nan_run_limit):
+        first_nan_run_start = np.flatnonzero(run_sums == nan_run_limit)[0]
+        y_points = y_points[:first_nan_run_start]
+        frames = frames[:first_nan_run_start]
+        original_nan_mask = original_nan_mask[:first_nan_run_start]
+        original_valid_mask = original_valid_mask[:first_nan_run_start]
+
+    # Safety check
+    if np.sum(original_valid_mask) < 2:
+        print(f"Warning: not enough valid points in {filename}.")
+        return np.nan
+
+    # Interpolate NaNs
+    y_points[original_nan_mask] = np.interp(
+        np.flatnonzero(original_nan_mask),
+        np.flatnonzero(original_valid_mask),
+        y_points[original_valid_mask]
+    )
+
+    while (
+        delete_first_elements < len(y_points)
+        and abs(y_points[delete_first_elements] - y_points[delete_first_elements - 1]) < leniency
+    ):
+        delete_first_elements += 1
+
+    delete_first_elements = max(0, delete_first_elements - 30)  # rewind 30 frames
+    drop_height = y_points[delete_first_elements]
+
+    afgeknipt_y = y_points[delete_first_elements:].copy()
+    afgeknipt_frame = frames[delete_first_elements:].copy()
+    afgeknipt_original_valid = original_valid_mask[delete_first_elements:]
+
+    # Keep only up to the last originally valid datapoint
+    if np.any(afgeknipt_original_valid):
+        last_valid_idx = np.flatnonzero(afgeknipt_original_valid)[-1] + 1
+        afgeknipt_y = afgeknipt_y[:last_valid_idx]
+        afgeknipt_frame = afgeknipt_frame[:last_valid_idx]
+        afgeknipt_original_valid = afgeknipt_original_valid[:last_valid_idx]
+    else:
+        print(f"Warning: no valid cropped points in {filename}.")
+        return np.nan
+
+    # Remove points that were originally NaN inside the cropped array
+    afgeknipt_y = afgeknipt_y[afgeknipt_original_valid]
+    afgeknipt_frame = afgeknipt_frame[afgeknipt_original_valid]
+
+    if len(afgeknipt_y) < 5:
+        print(f"Warning: too few points left after cleaning in {filename}.")
+        return np.nan
+
+
+    for i in range(2, len(afgeknipt_y) - 2):
+        if afgeknipt_y[i] < drop_height / 2:
+            if afgeknipt_y[i - 2] >= afgeknipt_y[i - 1] >= afgeknipt_y[i] < afgeknipt_y[i + 1]:
+                if laagtepunt_1 == 0:
+                        laagtepunt_1 = i
+                else:
+                    if i - laagtepunt_1 > 5:
+                        laagtepunt_2 = i
+                        break
+
+    if laagtepunt_2 == 0:
+        laagtepunt_2 = len(afgeknipt_y) - 1
+    
+    if laagtepunt_2 - laagtepunt_1 < 3: #Sometime happens when the frame is too short
+        laagtepunt_1 -= 3
+        print(f"Mask {filename}, tracking went wrong.")
+
+    y = [0, drop_height]
+    x1 = [afgeknipt_frame[laagtepunt_1], afgeknipt_frame[laagtepunt_1]]
+    x2 = [afgeknipt_frame[laagtepunt_2], afgeknipt_frame[laagtepunt_2]]
+
+    frame_fall = afgeknipt_frame[40 : laagtepunt_1 -1]
+    y_fall = afgeknipt_y[40: laagtepunt_1 - 1]
+
+    frame_bounce = afgeknipt_frame[laagtepunt_1 + 1:laagtepunt_2 - 1]
+    y_bounce = afgeknipt_y[laagtepunt_1 + 1:laagtepunt_2 - 1]
+
+    if Find_Plot:
+        fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+
+        print(f'{variable_type} = {variable_value}')
+        print(f"The first {delete_first_elements} frames are deleted, after that the ball drops.")
+        print(f'The ball is released at y = {drop_height} pixels.')
+        print(f'First found minima located at {afgeknipt_frame[laagtepunt_1]} frames and {afgeknipt_frame[laagtepunt_2]} frames.')
+
+        ax[0].errorbar(frames, y_points, yerr=y_err, fmt='o', markersize=1)
+        ax[0].plot(
+            [delete_first_elements + frames[0] - 20, delete_first_elements + frames[0] + 100],
+            [drop_height, drop_height],
+            'b--'
+        )
+        ax[0].plot(
+            [delete_first_elements + frames[0], delete_first_elements + frames[0]],
+            [drop_height + 100, 0],
+            'r--'
+        )
+        ax[0].set_xlabel('Time (frames)')
+        ax[0].set_ylabel('Height [pixels]')
+        ax[0].set_title('Beginning Data')
+
+        ax[1].errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err, fmt='o', markersize=1)
+        ax[1].plot(x1, y, 'r--')
+        ax[1].plot(x2, y, 'r--')
+        ax[1].set_xlabel('Time (frames)')
+        ax[1].set_ylabel('Height (pixels)')
+        ax[1].set_title('Data from moment of release')
+
+        ax[2].errorbar(frame_bounce, y_bounce, yerr=y_err, markersize=2, fmt='o')
+        ax[2].set_xlabel('Time (frames)')
+        ax[2].set_ylabel('Height (pixels)')
+        ax[2].set_title('Isolated first Bounce')
+
+        fig.suptitle(f'Measurement on {variable_type} {variable_value}, filename = {filename}')
+        plt.tight_layout()
+        plt.show()
+
+    a_1, start_height, t_1 = parabola_fit(frame_fall, y_fall, Fit_Plot, Fit_Report)
+    a_2, bounce_height, t_2 = parabola_fit(frame_bounce, y_bounce, Fit_Plot, Fit_Report)
+
+    A = a_1 - a_2
+    B = 2*(a_2*t_2 - a_1*t_1)
+    C = a_1 * t_1 ** 2 + start_height - a_2 * t_2 ** 2 - bounce_height
+    D = B**2 - 4 * A * C
+
+    if D < 0:
+        print("error, negative discriminant")
+    
+    if D == 0:
+        t_bounce = -B / (2 * A)
+    
+    if D > 0:
+        t_bounce_1 = (-B + np.sqrt(B**2 - 4*A*C) )/ (2*A)
+        t_bounce_2 = (-B - np.sqrt(B**2 - 4*A*C) )/ (2*A)
+
+        t_bounce = min(t_bounce_1, t_bounce_2, key = lambda x: abs(x-afgeknipt_frame[laagtepunt_1]))
+    y_0 = a_1*(t_bounce - t_1)**2 + start_height
+
+    velocity_before = 2*a_1*(t_bounce - t_1)
+    velocity_after = 2*a_2*(t_bounce - t_2)
+
+    COR = np.abs(velocity_after / velocity_before) 
+
+    if Find_Plot:
+        plt.errorbar(afgeknipt_frame, afgeknipt_y, yerr=y_err, fmt='o', markersize=1)
+        plt.plot([t_bounce - 5, t_bounce],[y_0 - 5*velocity_before, y_0])
+        plt.plot([t_bounce, t_bounce + 5],[y_0, y_0 + 5*velocity_after])
+        plt.show()
+
+
+    return COR
+
+
+def get_avg_err(x, y):
+    x =  np.array(x, dtype = float)
+    y =  np.array(y, dtype = float)
+
+    mask = ~ np.isnan(y)
+
+    y_clean = y[mask]
+    x_clean = x[mask]
+
+    x_unique = np.unique(x)
+
+    avg_y = []
+    err_y = []
+
+    for val in x_unique:
+        y_group = y_clean[x_clean == val]
+        avg_y.append(np.mean(y_group))
+        err_y.append(np.std(y_group, ddof = 1)/np.sqrt(len(y_group)))
+
+    return x_clean, y_clean, err_y, avg_y, x_unique
