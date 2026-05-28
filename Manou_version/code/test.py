@@ -5,12 +5,7 @@ from lmfit import Model
 
 # Author: Manou Liesker. Student number: 15250946
 
-############################ General functions that should work on most files ##############################
 
-
-# Fits a parabola to an isolated bounce
-# Input: Frames and y-points of an isolated bounce (So that you only have a parabola), Plot (True or False), fit_report (True or False)
-# Output: The top of the parabola (the bounce height). If Plot and fit_report are True, it plots the fit and prints the fit report 
 def linear_fit(x_points, y_points, error):
 
     def fit_function(x, a, b):
@@ -77,6 +72,29 @@ for l in layers:
 linear_fit(layers, measured_mm, 0.02)
 
 
+plt.errorbar(layers, measured_mm, fmt = 'o', label = 'Measured thickness')
+plt.errorbar(layers, papermm, fmt = 'o', label = 'paper thickness * paper layers')
+plt.legend()
+plt.xlabel("Amount of paper layers")
+plt.ylabel("Stack height (mm)")
+plt.show()
+
+
+
+
+
+layers = []
+measured_mm = [0.01, 0.58, 1.16, 1.74, 2.32, 2.92, 3.46, 4.04, 4.62, 5.16, 5.72, 6.30, 6.88, 7.43, 8.00, 8.54, 9.16, 9.69, 10.25, 10.81, 11.41]
+papermm = []
+
+for i in range(0,105, 5):
+    layers.append(i)
+
+for l in layers:
+    papermm.append(0.1 * l)
+
+
+linear_fit(layers, measured_mm, 0.02)
 
 
 plt.errorbar(layers, measured_mm, fmt = 'o', label = 'Measured thickness')
@@ -85,5 +103,7 @@ plt.legend()
 plt.xlabel("Amount of paper layers")
 plt.ylabel("Stack height (mm)")
 plt.show()
+
+
 
 
