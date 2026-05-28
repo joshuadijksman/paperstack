@@ -5,7 +5,7 @@ import numpy as np
 
 inputfolder = Path(r"Z:")
 filename = "test0"
-   
+
 file_path = inputfolder / f"{filename}.csv"
 data_current = pd.read_csv(file_path)
 
