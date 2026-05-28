@@ -1,0 +1,175 @@
+
+import time
+import nidaqmx
+from nidaqmx.constants import AcquisitionType, READ_ALL_AVAILABLE, TerminalConfiguration,LineGrouping
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+import traceback
+from threading import Thread,Lock
+from tkinter import filedialog as fd
+
+
+#Memory to buffer data
+DATA_BUFFER_SIZE = 70000000
+#Data from buffer
+data = []
+# array to draw graph, is graph necessary?
+x = []
+y = []
+
+# Max rate = 400000 samples per second
+SAMPLERATE = 400000.0 # per second
+
+# Graph will be slowing down if you draw everything...
+MAXPOINTS_TO_SHOW = 800000
+
+# Data Points to trigger callback function to save in data array
+AMOUNTPOINTS = 40000
+
+#Interval to update graph (ms)
+GRAPHINTERVAL = 100
+
+#maximum of time to get data
+MAX_TIME = 15
+
+
+# updates the data and graph
+def update(frame):
+
+    global graph
+    global data
+    global x,y
+    global ax
+    # slotje is lock to tell the other thread not to write to the data array
+    global slotje
+    # flag to stop task
+    global endtask
+
+    try:
+
+        if len(data) > 0:
+
+            slotje.acquire(blocking=True)
+
+            xstep = 1 / SAMPLERATE
+            xend = len(y) / SAMPLERATE
+            x = np.arange(0, xend,xstep)
+            l = len(x)
+
+            if x[-1] > MAX_TIME:
+                endtask = True
+
+            # creating a new graph or updating the graph
+            if l > MAXPOINTS_TO_SHOW:
+                graph.set_xdata(x[l-MAXPOINTS_TO_SHOW:])
+                graph.set_ydata(y[l-MAXPOINTS_TO_SHOW:])
+                plt.xlim(x[-MAXPOINTS_TO_SHOW], x[-1])
+            else:
+                graph.set_xdata(x)
+                graph.set_ydata(y)
+                plt.xlim(x[0], x[-1])
+
+            slotje.release()
+
+            mi = y.min()
+            mi = mi - abs(0.05*mi)
+            ax.set_ylim(mi, 1.05*y.max())
+
+    except:
+          traceback.print_exc()
+
+
+def wait_for_trigger():
+     print("Waiting for trigger!")
+     with nidaqmx.Task() as trigger_task:
+        trigger_task.di_channels.add_di_chan("Dev1/PFI0", line_grouping=LineGrouping.CHAN_PER_LINE)
+
+        trigger = False
+        while trigger == False:
+            trigger = trigger_task.read()
+
+def measurement(task):
+    global slotje
+    global endtask
+
+    def callback(task_handle, every_n_samples_event_type, number_of_samples, callback_data):
+        """Callback function for reading signals."""
+
+        global data
+        global y
+        global endtask
+
+        if endtask:
+            task.stop()
+        else:
+
+            data = task.read(number_of_samples_per_channel=number_of_samples)
+
+            slotje.acquire(blocking=True)
+
+            y = np.append(y,data)
+
+            slotje.release()
+
+
+        return 0
+
+    task.ai_channels.add_ai_voltage_chan("Dev1/ai0",terminal_config=TerminalConfiguration.RSE)
+    task.timing.cfg_samp_clk_timing(SAMPLERATE, sample_mode=AcquisitionType.CONTINUOUS)
+    task.register_every_n_samples_acquired_into_buffer_event(AMOUNTPOINTS, callback)
+    task.in_stream.input_buf_size = DATA_BUFFER_SIZE
+
+    wait_for_trigger()
+
+    task.start()
+
+
+
+def main():
+
+    filename = fd.asksaveasfilename()
+    print(filename)
+    global graph
+    global data
+    global ax
+    global task
+    global y
+    global slotje
+    global endtask
+
+    endtask = False
+    slotje = Lock()
+
+    fig, ax = plt.subplots()
+    graph = ax.plot(x,y,color = 'g')[0]
+
+    anim = FuncAnimation(fig, update, interval=GRAPHINTERVAL,cache_frame_data=False)
+
+    task = nidaqmx.Task()
+
+    mt = Thread(target=measurement,args=(task,))
+    mt.run()
+
+    plt.show()
+
+    endtask = True
+
+    task.stop()
+
+    print("Busy with writing to file!!!")
+
+    with open(filename,'w') as f:
+        i = 0
+        f.write("time,voltage\n")
+        while i < len(x):
+
+            s = str(round(x[i],7)) + "," + str(y[i]) + "\n"
+
+            f.write(s)
+            i = i + 1
+
+    print("Ready!")
+
+if __name__ == "__main__":
+    main()
