@@ -10,7 +10,7 @@ from tkinter import filedialog as fd
 
 # =================== USER PARAMETERS ===================
 SAMPLERATE = 400000.0         # Sampling rate in Hz
-DURATION_SEC = 10              # Total acquisition duration in seconds
+DURATION_SEC = 4            # Total acquisition duration in seconds
 CHANNEL_NAME = "Dev1/ai0"     # Analog input channel
 TRIGGER_LINE = "Dev1/PFI0"    # Digital line used as trigger
 ENABLE_TRIGGER = False        # Toggle hardware trigger ON/OFF
