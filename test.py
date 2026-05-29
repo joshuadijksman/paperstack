@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 inputfolder = Path(r"Z:")
-filename = "80dpaper_8_72mm"
+filename = "80dpaper_13_15mm"
 
 file_path = inputfolder / f"{filename}.csv"
 data_current = pd.read_csv(file_path)
