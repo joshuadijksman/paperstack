@@ -17,8 +17,6 @@ time = data_current.iloc[:, 0].to_list()
 voltage = data_current.iloc[:, 1].to_list()
 
 
-
-
 plt.plot(time, voltage)
 plt.title(filename)
 plt.yscale('log')
