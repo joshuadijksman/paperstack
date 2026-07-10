@@ -1,0 +1,6 @@
+COR as a function of measured/effective stack height for the 80 and 120 g/m2 paper types.
+    These are the paper types used for the quantitative model comparison.
+
+Datasets in this file:
+- 80 g/m2 paper: Stack height estimated from laser-measured effective cell thickness for 80 g/m2 paper.
+- 120 g/m2 paper: Stack height estimated from laser-measured effective cell thickness for 120 g/m2 paper.

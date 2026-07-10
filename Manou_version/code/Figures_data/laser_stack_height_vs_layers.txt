@@ -1,0 +1,8 @@
+Laser stack-height measurements as a function of the number of paper layers.
+    The measured stack height is compared to the paper-only estimate, showing the contribution of air gaps between sheets.
+
+Datasets in this file:
+- 80 g/m2 measured stack height: Laser displacement measurement of total stack height for 80 g/m2 paper.
+- 80 g/m2 paper-only estimate: Estimated paper thickness without air gaps, using single-sheet paper thickness.
+- 120 g/m2 measured stack height: Laser displacement measurement of total stack height for 120 g/m2 paper.
+- 120 g/m2 paper-only estimate: Estimated paper thickness without air gaps, using single-sheet paper thickness.

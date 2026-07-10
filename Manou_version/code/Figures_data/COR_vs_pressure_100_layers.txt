@@ -1,0 +1,6 @@
+COR as a function of pressure for a paper stack with 100 layers.
+    These measurements are separate from the layer-number scan at 30 mbar.
+
+Datasets in this file:
+- 17 July pressure series: COR measured as a function of pressure for a stack of 100 paper sheets.
+- 18 July pressure series: COR measured as a function of pressure for a stack of 100 paper sheets.

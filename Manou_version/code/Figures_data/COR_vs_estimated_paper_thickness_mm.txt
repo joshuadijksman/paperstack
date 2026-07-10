@@ -1,0 +1,9 @@
+COR as a function of estimated total paper thickness.
+    This uses only the paper thickness and does not include measured air gaps between neighbouring sheets.
+
+Datasets in this file:
+- 40 g/m2 paper: Thickness estimated as number of layers times single-sheet paper thickness.
+- 80 g/m2 paper: Thickness estimated as number of layers times single-sheet paper thickness.
+- 120 g/m2 paper: Thickness estimated as number of layers times single-sheet paper thickness.
+- 160 g/m2 paper: Thickness estimated as number of layers times single-sheet paper thickness.
+- 250 g/m2 paper: Thickness estimated as number of layers times single-sheet paper thickness.

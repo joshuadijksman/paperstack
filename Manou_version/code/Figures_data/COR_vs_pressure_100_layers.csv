@@ -1,0 +1,18 @@
+dataset,point_index,x,y,yerr,x_label,y_label,notes
+17 July pressure series,0,40.0,0.2880513062894055,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+17 July pressure series,1,100.0,0.5007299845439904,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+17 July pressure series,2,200.0,0.6046190308716243,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+17 July pressure series,3,410.0,0.6037525730114345,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+17 July pressure series,4,540.0,0.6370405548067491,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+17 July pressure series,5,755.0,0.6640895174759762,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+17 July pressure series,6,1018.5,0.6569676673722018,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,0,40.0,0.2880513062894055,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,1,95.0,0.44550511154423417,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,2,100.0,0.5007299845439904,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,3,190.0,0.5197480716513827,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,4,200.0,0.6046190308716243,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,5,300.0,0.529556397447279,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,6,410.0,0.6030305317009409,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,7,540.0,0.6370405548067491,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,8,775.0,0.6640895174759762,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.
+18 July pressure series,9,1018.5,0.656967667372202,0.0,Pressure [mbar],Coefficient of restitution,COR measured as a function of pressure for a stack of 100 paper sheets.

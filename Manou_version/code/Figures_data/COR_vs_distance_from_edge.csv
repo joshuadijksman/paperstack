@@ -1,0 +1,66 @@
+dataset,point_index,x,y,yerr,x_label,y_label,notes
+5 paper layers,0,2.0,0.5070438598656876,0.0023149553446410467,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,1,6.0,0.49871667575540385,0.006299131838919776,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,2,9.0,0.5099109363043312,0.0051207335892321515,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,3,10.0,0.5017519375300057,0.0034778311204616188,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,4,11.0,0.5085207500137656,0.003218088038231746,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,5,12.0,0.5063658237626432,0.005697584484888921,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,6,13.0,0.5038705253489049,0.004642318224805742,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+5 paper layers,7,14.0,0.50956589210421,0.00011174093113883303,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 5 paper layers.
+10 paper layers,0,1.0,0.4884771578483749,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,1,2.0,0.4891834523558101,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,2,3.0,0.48770429380615166,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,3,4.0,0.4911410369893354,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,4,5.0,0.4891968478854976,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,5,6.0,0.48374447144391,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,6,7.0,0.4905732329017815,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,7,8.0,0.4851874568309942,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,8,9.0,0.48503872929249875,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,9,10.0,0.4898462722201274,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,10,11.0,0.4937377568597208,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,11,12.0,0.4887375963783714,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,12,13.0,0.49191117383904653,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+10 paper layers,13,14.0,0.4928951225159072,,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+50 paper layers,0,1.0,0.6139417248319083,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,1,2.0,0.6142479310100201,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,2,3.0,0.6149560952301881,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,3,4.0,0.6338224968790523,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,4,5.0,0.6460725995800727,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,5,6.0,0.6468009980735727,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,6,7.0,0.6502450650846056,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,7,8.0,0.659252627175764,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,8,9.0,0.6550123428152346,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,9,10.0,0.6601083248877926,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,10,11.0,0.6487494680811997,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,11,12.0,0.5865353108067969,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,12,13.0,0.5773296712157103,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,13,14.0,0.5062725324595662,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+50 paper layers,14,15.0,0.4786140643667651,,Distance from edge [cm],Coefficient of restitution,Retry measurement for a stack of 50 paper layers.
+100 paper layers,0,2.0,0.4885432907216605,0.004654962006624069,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,1,3.0,0.5150815267522574,0.0026944030685551235,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,2,4.0,0.5261885921926779,0.005665224860237461,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,3,5.0,0.5491438682782496,0.003622178007909147,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,4,6.0,0.564887086060155,0.001758261821990517,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,5,7.0,0.5643721895794777,0.0065413553640134205,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,6,8.0,0.5759883422447151,0.004021664507027211,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,7,9.0,0.5985197615210035,0.0025433126277001742,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,8,10.0,0.6082413331732327,0.0032674604926377594,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,9,11.0,0.6137462878488759,0.0017957119138430873,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,10,12.0,0.6172912901782562,0.0018333116411737781,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,11,13.0,0.6183186836926509,0.002314111616204121,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,12,14.0,0.622049452462842,0.0022424549777489543,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+100 paper layers,13,15.0,0.6253162890990032,0.002873161935800746,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 100 paper layers.
+300 paper layers,0,2.0,0.3121039284240652,0.007881106770715293,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,1,3.0,0.32284388344171894,0.0037735672718948042,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,2,4.0,0.3051833211186843,0.0012097879565413727,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,3,5.0,0.30867092421939907,0.0028933891638653485,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,4,6.0,0.2976224072347106,0.002312396000712054,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,5,7.0,0.2972023997876164,0.006047944827182217,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,6,8.0,0.30563240889670573,0.01756074867311047,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,7,9.0,0.27981192974783736,0.0037294916100008456,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,8,10.0,0.28937842624181404,0.0017514026960364644,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,9,11.0,0.3298042830484615,0.009457838612639763,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,10,12.0,0.3664671654656708,0.0019076944896794512,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,11,13.0,0.38996604733984097,0.012809051061170808,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,12,14.0,0.45055732887873995,0.002225129959933659,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.
+300 paper layers,13,15.0,0.45848821730077,0.0019697448595631566,Distance from edge [cm],Coefficient of restitution,COR measured at different distances from the edge for a stack of 300 paper layers.

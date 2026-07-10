@@ -1,0 +1,8 @@
+Air-gap estimates derived from the laser stack-height measurements.
+    The total air thickness is calculated by subtracting the paper-only thickness from the measured stack height.
+
+Datasets in this file:
+- 80 g/m2 total air thickness: Measured stack height minus paper-only thickness for 80 g/m2 paper.
+- 120 g/m2 total air thickness: Measured stack height minus paper-only thickness for 120 g/m2 paper.
+- 80 g/m2 air thickness per layer: Total air thickness divided by number of layers for 80 g/m2 paper.
+- 120 g/m2 air thickness per layer: Total air thickness divided by number of layers for 120 g/m2 paper.

@@ -1,0 +1,10 @@
+COR as a function of the number of paper layers for different paper surface densities.
+    These are the averaged experimental data used for the main comparison between paper types.
+    The error values are the standard error of the mean where repeated measurements were available.
+
+Datasets in this file:
+- 40 g/m2 paper: Final averaged COR data for 40 g/m2 paper.
+- 80 g/m2 paper: Final averaged COR data for 80 g/m2 paper, new paper.
+- 120 g/m2 paper: Final averaged COR data for 120 g/m2 paper.
+- 160 g/m2 paper: Final averaged COR data for 160 g/m2 paper.
+- 250 g/m2 paper: Final averaged COR data for 250 g/m2 paper.

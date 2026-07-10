@@ -1,0 +1,9 @@
+COR as a function of distance from the edge of the paper stack.
+    This checks whether edge effects influence the measured coefficient of restitution.
+
+Datasets in this file:
+- 5 paper layers: COR measured at different distances from the edge for a stack of 5 paper layers.
+- 10 paper layers: COR measured at different distances from the edge for a stack of 10 paper layers. No repeated-measurement SEM included.
+- 50 paper layers: Retry measurement for a stack of 50 paper layers.
+- 100 paper layers: COR measured at different distances from the edge for a stack of 100 paper layers.
+- 300 paper layers: COR measured at different distances from the edge for a stack of 300 paper layers.

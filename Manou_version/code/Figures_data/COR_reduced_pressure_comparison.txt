@@ -1,0 +1,6 @@
+COR as a function of the number of paper layers at atmospheric pressure and reduced pressure.
+    This dataset is used to test whether the air layers between paper sheets contribute to the non-monotonic COR behaviour.
+
+Datasets in this file:
+- 80 g/m2 paper at atmospheric pressure: Atmospheric pressure measurement, approximately 1013 to 1030 mbar.
+- 80 g/m2 paper at reduced pressure: Reduced-pressure measurement, approximately 30 mbar.
